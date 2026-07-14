@@ -1,0 +1,14 @@
+appId: com.instituto.sistema-academico
+productName: Sistema Académico
+directories:
+  buildResources: build
+  output: release
+files:
+  - out/**/*
+  - package.json
+  - node_modules/**/*
+win:
+  target: nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

@@ -1,0 +1,101 @@
+import { Schema, model, type HydratedDocument } from 'mongoose'
+import {
+  attendanceRegisteredBySchema,
+  attendanceStatusSchema,
+  type Attendance
+} from '../../shared/attendance'
+
+type AttendanceDocument = Omit<Attendance, 'id'>
+
+const attendanceSchema = new Schema<AttendanceDocument>(
+  {
+    studentId: { type: String, required: true },
+    courseEditionId: { type: String, required: true },
+    date: { type: Date, required: true },
+    time: { type: String, required: true },
+    status: { type: String, enum: attendanceStatusSchema.options, required: true },
+    registeredBy: { type: String, enum: attendanceRegisteredBySchema.options, required: true },
+    createdAt: { type: Date, required: true }
+  },
+  { collection: 'asistencias' }
+)
+
+const AttendanceModel = model<AttendanceDocument>('Attendance', attendanceSchema)
+
+function toAttendance(doc: HydratedDocument<AttendanceDocument>): Attendance {
+  const { _id, studentId, courseEditionId, date, time, status, registeredBy, createdAt } = doc
+  return {
+    id: _id.toString(),
+    studentId,
+    courseEditionId,
+    date,
+    time,
+    status,
+    registeredBy,
+    createdAt
+  }
+}
+
+type CreateAttendanceInput = Omit<AttendanceDocument, 'createdAt'>
+
+export async function createAttendance(data: CreateAttendanceInput): Promise<Attendance> {
+  const doc = await AttendanceModel.create({ ...data, createdAt: new Date() })
+  return toAttendance(doc)
+}
+
+export async function findAttendanceById(id: string): Promise<Attendance | null> {
+  const doc = await AttendanceModel.findById(id)
+  return doc ? toAttendance(doc) : null
+}
+
+export async function findAttendanceByCourseEdition(
+  courseEditionId: string
+): Promise<Attendance[]> {
+  const docs = await AttendanceModel.find({ courseEditionId })
+  return docs.map(toAttendance)
+}
+
+export async function findAttendanceByStudent(studentId: string): Promise<Attendance[]> {
+  const docs = await AttendanceModel.find({ studentId })
+  return docs.map(toAttendance)
+}
+
+export async function findAttendanceByCourseEditionAndDate(
+  courseEditionId: string,
+  date: Date
+): Promise<Attendance[]> {
+  const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+  const docs = await AttendanceModel.find({
+    courseEditionId,
+    date: { $gte: startOfDay, $lt: endOfDay }
+  })
+  return docs.map(toAttendance)
+}
+
+export async function findAttendanceForToday(
+  studentId: string,
+  courseEditionId: string
+): Promise<Attendance | null> {
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+  const doc = await AttendanceModel.findOne({
+    studentId,
+    courseEditionId,
+    date: { $gte: startOfDay, $lt: endOfDay }
+  })
+  return doc ? toAttendance(doc) : null
+}
+
+export async function updateAttendance(
+  id: string,
+  data: Partial<CreateAttendanceInput>
+): Promise<Attendance | null> {
+  const doc = await AttendanceModel.findByIdAndUpdate(id, data, { new: true })
+  return doc ? toAttendance(doc) : null
+}
+
+export async function deleteAttendance(id: string): Promise<void> {
+  await AttendanceModel.findByIdAndDelete(id)
+}
