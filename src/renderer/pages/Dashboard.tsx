@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { PageHeader } from '../components/ui/page-header'
 
 export function Dashboard(): React.JSX.Element {
   const [version, setVersion] = useState<string | null>(null)
@@ -8,11 +9,13 @@ export function Dashboard(): React.JSX.Element {
   }, [])
 
   return (
-    <div className="space-y-2">
-      <h1 className="text-2xl font-semibold">Bienvenido al Sistema Académico</h1>
-      <p className="text-muted-foreground">
-        {version ? `Versión de la aplicación: ${version}` : 'Consultando versión de la aplicación…'}
-      </p>
+    <div className="space-y-6">
+      <PageHeader
+        title="Bienvenido al Sistema Académico"
+        description={
+          version ? `Versión de la aplicación: ${version}` : 'Consultando versión de la aplicación…'
+        }
+      />
     </div>
   )
 }

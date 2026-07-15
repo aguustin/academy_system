@@ -6,6 +6,9 @@ import type { Teacher } from '../../shared/teachers'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Select } from './ui/select'
+import { Card } from './ui/card'
+import { FormField } from './ui/form-field'
+import { CheckboxField } from './ui/checkbox-field'
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Administrador',
@@ -89,106 +92,78 @@ export function UserForm({ initialValues, onSubmit, onCancel }: UserFormProps): 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-md flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="username" className="text-sm font-medium">
-          Usuario
-        </label>
-        <Input
-          id="username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-        />
-        {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-        {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-      </div>
-
-      {!initialValues && (
-        <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            Contraseña inicial
-          </label>
+    <Card className="max-w-md p-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <FormField label="Usuario" htmlFor="username" error={errors.username}>
           <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            id="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
           />
-          {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-        </div>
-      )}
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="role" className="text-sm font-medium">
-          Rol
-        </label>
-        <Select
-          id="role"
-          value={role}
-          onChange={(event) => handleRoleChange(event.target.value as UserRole)}
-        >
-          {userRoleSchema.options.map((option) => (
-            <option key={option} value={option}>
-              {ROLE_LABELS[option]}
-            </option>
-          ))}
-        </Select>
-      </div>
+        <FormField label="Email" htmlFor="email" error={errors.email}>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </FormField>
 
-      {role === 'teacher' && (
-        <div className="flex flex-col gap-1">
-          <label htmlFor="teacherId" className="text-sm font-medium">
-            Profesor
-          </label>
+        {!initialValues && (
+          <FormField label="Contraseña inicial" htmlFor="password" error={errors.password}>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </FormField>
+        )}
+
+        <FormField label="Rol" htmlFor="role">
           <Select
-            id="teacherId"
-            value={teacherId}
-            onChange={(event) => setTeacherId(event.target.value)}
+            id="role"
+            value={role}
+            onChange={(event) => handleRoleChange(event.target.value as UserRole)}
           >
-            <option value="">Seleccionar...</option>
-            {teachers.map((teacher) => (
-              <option key={teacher.id} value={teacher.id}>
-                {teacher.firstName} {teacher.lastName}
+            {userRoleSchema.options.map((option) => (
+              <option key={option} value={option}>
+                {ROLE_LABELS[option]}
               </option>
             ))}
           </Select>
-          {errors.teacherId && <p className="text-sm text-destructive">{errors.teacherId}</p>}
+        </FormField>
+
+        {role === 'teacher' && (
+          <FormField label="Profesor" htmlFor="teacherId" error={errors.teacherId}>
+            <Select
+              id="teacherId"
+              value={teacherId}
+              onChange={(event) => setTeacherId(event.target.value)}
+            >
+              <option value="">Seleccionar...</option>
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.firstName} {teacher.lastName}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        )}
+
+        <CheckboxField label="Activo" htmlFor="active" checked={active} onChange={setActive} />
+
+        <div className="flex gap-2 pt-1">
+          <Button type="submit" disabled={submitting}>
+            {initialValues ? 'Guardar' : 'Crear'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+            Cancelar
+          </Button>
         </div>
-      )}
-
-      <div className="flex items-center gap-2">
-        <input
-          id="active"
-          type="checkbox"
-          checked={active}
-          onChange={(event) => setActive(event.target.checked)}
-          className="size-4 rounded border-input"
-        />
-        <label htmlFor="active" className="text-sm font-medium">
-          Activo
-        </label>
-      </div>
-
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting}>
-          {initialValues ? 'Guardar' : 'Crear'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Card>
   )
 }

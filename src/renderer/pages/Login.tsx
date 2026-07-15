@@ -3,6 +3,8 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { Card } from '../components/ui/card'
+import { FormField } from '../components/ui/form-field'
 
 const ERROR_MESSAGES = {
   'user-not-found': 'El usuario ingresado no existe.',
@@ -41,42 +43,47 @@ export function Login(): React.JSX.Element {
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
-      <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold">Sistema Académico</h1>
-          <p className="text-sm text-muted-foreground">Iniciá sesión para continuar</p>
-        </div>
+      <Card className="w-full max-w-sm p-8">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="space-y-1 text-center">
+            <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
+              SA
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight">Sistema Académico</h1>
+            <p className="text-sm text-muted-foreground">Iniciá sesión para continuar</p>
+          </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="username" className="text-sm font-medium">
-            Usuario
-          </label>
-          <Input
-            id="username"
-            autoFocus
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-          />
-        </div>
+          <div className="flex flex-col gap-4">
+            <FormField label="Usuario" htmlFor="username">
+              <Input
+                id="username"
+                autoFocus
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+              />
+            </FormField>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            Contraseña
-          </label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </div>
+            <FormField label="Contraseña" htmlFor="password">
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </FormField>
+          </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          )}
 
-        <Button type="submit" disabled={submitting}>
-          Ingresar
-        </Button>
-      </form>
+          <Button type="submit" disabled={submitting} className="w-full">
+            Ingresar
+          </Button>
+        </form>
+      </Card>
     </div>
   )
 }

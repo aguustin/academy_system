@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { z } from 'zod'
+import { CalendarCheck, ClipboardCheck, Users } from 'lucide-react'
 import type { TeacherCourseDetail } from '../../shared/electron-api'
 import type { AttendanceSummary, ClassAttendanceStudent } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
@@ -15,6 +16,9 @@ import {
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Select } from './ui/select'
+import { Card } from './ui/card'
+import { EmptyState } from './ui/empty-state'
+import { FormField } from './ui/form-field'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { StudentDetail } from './StudentDetail'
 
@@ -109,45 +113,42 @@ function EvaluationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-md flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="evaluationName" className="text-sm font-medium">
-          Nombre
-        </label>
-        <Input
-          id="evaluationName"
-          value={values.name}
-          onChange={(event) => setValues({ ...values, name: event.target.value })}
-        />
-        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-      </div>
+    <Card className="max-w-md p-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <FormField label="Nombre" htmlFor="evaluationName" error={errors.name}>
+          <Input
+            id="evaluationName"
+            value={values.name}
+            onChange={(event) => setValues({ ...values, name: event.target.value })}
+          />
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="evaluationType" className="text-sm font-medium">
-          Tipo
-        </label>
-        <Select
-          id="evaluationType"
-          value={values.type}
-          onChange={(event) => setValues({ ...values, type: event.target.value as EvaluationType })}
-        >
-          {evaluationTypeSchema.options.map((option) => (
-            <option key={option} value={option}>
-              {EVALUATION_TYPE_LABELS[option]}
-            </option>
-          ))}
-        </Select>
-      </div>
+        <FormField label="Tipo" htmlFor="evaluationType">
+          <Select
+            id="evaluationType"
+            value={values.type}
+            onChange={(event) =>
+              setValues({ ...values, type: event.target.value as EvaluationType })
+            }
+          >
+            {evaluationTypeSchema.options.map((option) => (
+              <option key={option} value={option}>
+                {EVALUATION_TYPE_LABELS[option]}
+              </option>
+            ))}
+          </Select>
+        </FormField>
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting}>
-          {initialValues ? 'Guardar' : 'Crear'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+        <div className="flex gap-2 pt-1">
+          <Button type="submit" disabled={submitting}>
+            {initialValues ? 'Guardar' : 'Crear'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Card>
   )
 }
 
@@ -278,7 +279,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   }
 
   if (detail === null) {
-    return <p className="text-muted-foreground">Cargando...</p>
+    return <p className="text-sm text-muted-foreground">Cargando...</p>
   }
 
   if (selectedStudentId) {
@@ -294,15 +295,17 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   const { courseEdition, courseTemplate, teacher, students, classSessions } = detail
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{courseTemplate?.name ?? 'Detalle del curso'}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {courseTemplate?.name ?? 'Detalle del curso'}
+        </h1>
         <Button variant="outline" size="sm" onClick={onBack}>
           Volver
         </Button>
       </div>
 
-      <div className="space-y-1 text-sm text-muted-foreground">
+      <Card className="space-y-1 p-6 text-sm text-muted-foreground">
         <p>Profesor: {teacher ? `${teacher.firstName} ${teacher.lastName}` : '—'}</p>
         <p>
           Inicio: {formatDate(courseEdition.startDate)} · Fin: {formatDate(courseEdition.endDate)}
@@ -314,12 +317,12 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
             </li>
           ))}
         </ul>
-      </div>
+      </Card>
 
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold">Alumnos inscriptos</h2>
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Alumnos inscriptos</h2>
         {students.length === 0 ? (
-          <p className="text-muted-foreground">No hay alumnos inscriptos todavía.</p>
+          <EmptyState icon={Users} title="No hay alumnos inscriptos todavía" />
         ) : (
           <Table>
             <TableHeader>
@@ -332,7 +335,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
             <TableBody>
               {students.map((student) => (
                 <TableRow key={student.id}>
-                  <TableCell>
+                  <TableCell className="font-medium">
                     {student.firstName} {student.lastName}
                   </TableCell>
                   <TableCell>{student.dni}</TableCell>
@@ -352,9 +355,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Clases</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Clases</h2>
           {attendanceMode.type === 'closed' && classSessions.length > 0 && (
             <div className="flex gap-2">
               <Button size="sm" onClick={() => setAttendanceMode({ type: 'select-class' })}>
@@ -377,7 +380,10 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
         </div>
 
         {classSessions.length === 0 ? (
-          <p className="text-muted-foreground">Todavía no se generaron clases para esta edición.</p>
+          <EmptyState
+            icon={CalendarCheck}
+            title="Todavía no se generaron clases para esta edición"
+          />
         ) : attendanceMode.type === 'closed' ? (
           <Table>
             <TableHeader>
@@ -389,7 +395,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
             <TableBody>
               {classSessions.map((classSession) => (
                 <TableRow key={classSession.id}>
-                  <TableCell>{formatDate(classSession.date)}</TableCell>
+                  <TableCell className="font-medium">{formatDate(classSession.date)}</TableCell>
                   <TableCell>
                     {classSession.startTime} - {classSession.endTime}
                   </TableCell>
@@ -412,9 +418,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
           </div>
         ) : attendanceMode.type === 'summary' ? (
           summary === null ? (
-            <p className="text-muted-foreground">Cargando...</p>
+            <p className="text-sm text-muted-foreground">Cargando...</p>
           ) : summary.students.length === 0 ? (
-            <p className="text-muted-foreground">No hay alumnos inscriptos todavía.</p>
+            <EmptyState icon={Users} title="No hay alumnos inscriptos todavía" />
           ) : (
             <Table>
               <TableHeader>
@@ -433,7 +439,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               <TableBody>
                 {summary.students.map((student) => (
                   <TableRow key={student.studentId}>
-                    <TableCell>{student.fullName}</TableCell>
+                    <TableCell className="font-medium">{student.fullName}</TableCell>
                     {student.attendance.map((entry, index) => (
                       <TableCell key={index} className="text-center">
                         {entry.present ? 'P' : 'A'}
@@ -456,9 +462,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               {attendanceMode.classSession.startTime} - {attendanceMode.classSession.endTime}
             </p>
             {roster === null ? (
-              <p className="text-muted-foreground">Cargando...</p>
+              <p className="text-sm text-muted-foreground">Cargando...</p>
             ) : roster.length === 0 ? (
-              <p className="text-muted-foreground">No hay alumnos inscriptos en esta edición.</p>
+              <EmptyState icon={Users} title="No hay alumnos inscriptos en esta edición" />
             ) : (
               <Table>
                 <TableHeader>
@@ -470,7 +476,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                 <TableBody>
                   {roster.map((student) => (
                     <TableRow key={student.studentId}>
-                      <TableCell>
+                      <TableCell className="font-medium">
                         {student.firstName} {student.lastName}
                       </TableCell>
                       <TableCell>
@@ -478,7 +484,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                           type="checkbox"
                           checked={student.present}
                           onChange={() => toggleStudent(student.studentId)}
-                          className="size-4 rounded border-input"
+                          className="size-4 rounded border-input accent-primary"
                         />
                       </TableCell>
                     </TableRow>
@@ -490,15 +496,15 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               <Button size="sm" onClick={handleSaveAttendance} disabled={saving || roster === null}>
                 Guardar asistencias
               </Button>
-              {savedMessage && <p className="text-sm text-green-600">{savedMessage}</p>}
+              {savedMessage && <p className="text-sm text-success">{savedMessage}</p>}
             </div>
           </div>
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Evaluaciones</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Evaluaciones</h2>
           {evaluationMode.type === 'closed' ? (
             <Button size="sm" onClick={openEvaluations}>
               Evaluaciones del curso
@@ -520,11 +526,12 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               Nueva evaluación
             </Button>
             {evaluations === null ? (
-              <p className="text-muted-foreground">Cargando...</p>
+              <p className="text-sm text-muted-foreground">Cargando...</p>
             ) : evaluations.length === 0 ? (
-              <p className="text-muted-foreground">
-                Todavía no hay evaluaciones para esta edición.
-              </p>
+              <EmptyState
+                icon={ClipboardCheck}
+                title="Todavía no hay evaluaciones para esta edición"
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -537,26 +544,32 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                 <TableBody>
                   {evaluations.map((evaluation) => (
                     <TableRow key={evaluation.id}>
-                      <TableCell>{evaluation.name}</TableCell>
+                      <TableCell className="font-medium">{evaluation.name}</TableCell>
                       <TableCell>{EVALUATION_TYPE_LABELS[evaluation.type]}</TableCell>
-                      <TableCell className="space-x-2 text-right">
-                        <Button variant="outline" size="sm" onClick={() => openResults(evaluation)}>
-                          Registrar resultados
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEvaluationMode({ type: 'edit', evaluation })}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteEvaluation(evaluation.id)}
-                        >
-                          Eliminar
-                        </Button>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openResults(evaluation)}
+                          >
+                            Registrar resultados
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEvaluationMode({ type: 'edit', evaluation })}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteEvaluation(evaluation.id)}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -594,9 +607,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               </Button>
             </div>
             {results === null ? (
-              <p className="text-muted-foreground">Cargando...</p>
+              <p className="text-sm text-muted-foreground">Cargando...</p>
             ) : results.length === 0 ? (
-              <p className="text-muted-foreground">No hay alumnos inscriptos en esta edición.</p>
+              <EmptyState icon={Users} title="No hay alumnos inscriptos en esta edición" />
             ) : (
               <Table>
                 <TableHeader>
@@ -608,18 +621,19 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                 <TableBody>
                   {results.map((student) => (
                     <TableRow key={student.studentId}>
-                      <TableCell>
+                      <TableCell className="font-medium">
                         {student.firstName} {student.lastName}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-4">
                           {(['not-evaluated', 'passed', 'failed'] as const).map((status) => (
-                            <label key={status} className="flex items-center gap-1 text-sm">
+                            <label key={status} className="flex items-center gap-1.5 text-sm">
                               <input
                                 type="radio"
                                 name={`result-${student.studentId}`}
                                 checked={student.status === status}
                                 onChange={() => setResultStatus(student.studentId, status)}
+                                className="accent-primary"
                               />
                               {RESULT_STATUS_LABELS[status]}
                             </label>
@@ -639,9 +653,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               >
                 Guardar resultados
               </Button>
-              {resultsSavedMessage && (
-                <p className="text-sm text-green-600">{resultsSavedMessage}</p>
-              )}
+              {resultsSavedMessage && <p className="text-sm text-success">{resultsSavedMessage}</p>}
             </div>
           </div>
         )}

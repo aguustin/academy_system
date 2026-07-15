@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { Card } from '../components/ui/card'
+import { FormField } from '../components/ui/form-field'
 
 export function ChangePassword(): React.JSX.Element {
   const { setUser } = useAuth()
@@ -37,45 +39,49 @@ export function ChangePassword(): React.JSX.Element {
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
-      <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold">Cambio de contraseña obligatorio</h1>
-          <p className="text-sm text-muted-foreground">
-            Es tu primer inicio de sesión. Elegí una nueva contraseña para continuar.
-          </p>
-        </div>
+      <Card className="w-full max-w-sm p-8">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="space-y-1 text-center">
+            <h1 className="text-xl font-semibold tracking-tight">
+              Cambio de contraseña obligatorio
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Es tu primer inicio de sesión. Elegí una nueva contraseña para continuar.
+            </p>
+          </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="newPassword" className="text-sm font-medium">
-            Nueva contraseña
-          </label>
-          <Input
-            id="newPassword"
-            type="password"
-            autoFocus
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-          />
-        </div>
+          <div className="flex flex-col gap-4">
+            <FormField label="Nueva contraseña" htmlFor="newPassword">
+              <Input
+                id="newPassword"
+                type="password"
+                autoFocus
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+            </FormField>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="confirmPassword" className="text-sm font-medium">
-            Confirmar contraseña
-          </label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-          />
-        </div>
+            <FormField label="Confirmar contraseña" htmlFor="confirmPassword">
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+              />
+            </FormField>
+          </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          )}
 
-        <Button type="submit" disabled={submitting}>
-          Guardar y continuar
-        </Button>
-      </form>
+          <Button type="submit" disabled={submitting} className="w-full">
+            Guardar y continuar
+          </Button>
+        </form>
+      </Card>
     </div>
   )
 }

@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react'
+import { BookOpen } from 'lucide-react'
 import type { TeacherCourseSummary } from '../../shared/electron-api'
 import type { CourseEditionStatus, DayOfWeek } from '../../shared/courses'
 import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Card } from './ui/card'
+import { EmptyState } from './ui/empty-state'
 
 const STATUS_LABELS: Record<CourseEditionStatus, string> = {
   upcoming: 'Próxima',
   active: 'Activa',
   finished: 'Finalizada'
+}
+
+const STATUS_BADGE_VARIANT: Record<CourseEditionStatus, 'secondary' | 'success' | 'outline'> = {
+  upcoming: 'secondary',
+  active: 'success',
+  finished: 'outline'
 }
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
@@ -35,40 +45,48 @@ export function MyCourses({ onSelect }: MyCoursesProps): React.JSX.Element {
   }, [])
 
   if (courses === null) {
-    return <p className="text-muted-foreground">Cargando...</p>
+    return <p className="text-sm text-muted-foreground">Cargando...</p>
   }
 
   if (courses.length === 0) {
-    return <p className="text-muted-foreground">No tenés cursos asignados todavía.</p>
+    return (
+      <EmptyState
+        icon={BookOpen}
+        title="No tenés cursos asignados todavía"
+        description="Cuando un administrador te asigne una edición, va a aparecer acá."
+      />
+    )
   }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {courses.map(({ courseEdition, courseTemplate, studentCount, classSessionCount }) => (
-        <div key={courseEdition.id} className="space-y-2 rounded-md border border-border p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">{courseTemplate?.name ?? courseEdition.templateId}</h3>
-            <span className="text-xs text-muted-foreground">
+        <Card key={courseEdition.id} className="space-y-3 p-5">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-foreground">
+              {courseTemplate?.name ?? courseEdition.templateId}
+            </h3>
+            <Badge variant={STATUS_BADGE_VARIANT[courseEdition.status]}>
               {STATUS_LABELS[courseEdition.status]}
-            </span>
+            </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
             Inicio: {formatDate(courseEdition.startDate)} · Fin: {formatDate(courseEdition.endDate)}
           </p>
-          <ul className="text-sm text-muted-foreground">
+          <ul className="space-y-0.5 text-sm text-muted-foreground">
             {courseEdition.schedules.map((schedule, index) => (
               <li key={index}>
                 {DAY_LABELS[schedule.dayOfWeek]} {schedule.startTime} - {schedule.endTime}
               </li>
             ))}
           </ul>
-          <p className="text-sm">
+          <p className="text-sm text-foreground">
             Alumnos: {studentCount} · Clases: {classSessionCount}
           </p>
           <Button size="sm" onClick={() => onSelect(courseEdition.id)}>
             Ver detalle
           </Button>
-        </div>
+        </Card>
       ))}
     </div>
   )

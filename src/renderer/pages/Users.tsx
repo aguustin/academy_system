@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
+import { UserCog } from 'lucide-react'
 import type { UserListItem } from '../../shared/electron-api'
 import { useAuth } from '../auth/AuthContext'
 import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
+import { PageHeader } from '../components/ui/page-header'
+import { EmptyState } from '../components/ui/empty-state'
 import {
   Table,
   TableBody,
@@ -75,8 +79,8 @@ export function Users(): React.JSX.Element {
 
   if (mode.type === 'create') {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Nuevo usuario</h1>
+      <div className="space-y-6">
+        <PageHeader title="Nuevo usuario" />
         <UserForm
           onSubmit={(values) => handleCreate(values as UserCreateFormValues)}
           onCancel={() => setMode({ type: 'list' })}
@@ -88,8 +92,8 @@ export function Users(): React.JSX.Element {
   if (mode.type === 'edit') {
     const { user } = mode
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Editar usuario</h1>
+      <div className="space-y-6">
+        <PageHeader title="Editar usuario" />
         <UserForm
           initialValues={user}
           onSubmit={(values) => handleUpdate(user.id, values as UserUpdateFormValues)}
@@ -100,16 +104,21 @@ export function Users(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Usuarios</h1>
-        <Button onClick={() => setMode({ type: 'create' })}>Crear usuario</Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Usuarios"
+        action={<Button onClick={() => setMode({ type: 'create' })}>Crear usuario</Button>}
+      />
 
       {users === null ? (
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : users.length === 0 ? (
-        <p className="text-muted-foreground">No hay usuarios cargados todavía.</p>
+        <EmptyState
+          icon={UserCog}
+          title="No hay usuarios cargados todavía"
+          description="Creá el primer usuario para dar acceso a la aplicación."
+          action={<Button onClick={() => setMode({ type: 'create' })}>Crear usuario</Button>}
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -124,29 +133,39 @@ export function Users(): React.JSX.Element {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>{user.username}</TableCell>
+                <TableCell className="font-medium">{user.username}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>{ROLE_LABELS[user.role]}</TableCell>
-                <TableCell>{user.active ? 'Sí' : 'No'}</TableCell>
-                <TableCell className="space-x-2 text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMode({ type: 'edit', user })}
-                  >
-                    Editar
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleResetPassword(user)}>
-                    Restablecer contraseña
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(user)}
-                    disabled={user.id === currentUser?.id}
-                  >
-                    Eliminar
-                  </Button>
+                <TableCell>
+                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                    {ROLE_LABELS[user.role]}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={user.active ? 'success' : 'secondary'}>
+                    {user.active ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMode({ type: 'edit', user })}
+                    >
+                      Editar
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleResetPassword(user)}>
+                      Restablecer contraseña
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(user)}
+                      disabled={user.id === currentUser?.id}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

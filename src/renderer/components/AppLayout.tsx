@@ -8,8 +8,10 @@ export function AppLayout(): React.JSX.Element {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-6xl px-8 py-8">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { studentSchema, type Student } from '../../shared/students'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { Card } from './ui/card'
+import { FormField } from './ui/form-field'
 
 const studentFormSchema = studentSchema.omit({ id: true })
 type StudentFormValues = z.infer<typeof studentFormSchema>
@@ -51,51 +53,41 @@ export function StudentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-md flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="dni" className="text-sm font-medium">
-          DNI
-        </label>
-        <Input
-          id="dni"
-          value={values.dni}
-          onChange={(event) => setValues({ ...values, dni: event.target.value })}
-        />
-        {errors.dni && <p className="text-sm text-destructive">{errors.dni}</p>}
-      </div>
+    <Card className="max-w-md p-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <FormField label="DNI" htmlFor="dni" error={errors.dni}>
+          <Input
+            id="dni"
+            value={values.dni}
+            onChange={(event) => setValues({ ...values, dni: event.target.value })}
+          />
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="firstName" className="text-sm font-medium">
-          Nombre
-        </label>
-        <Input
-          id="firstName"
-          value={values.firstName}
-          onChange={(event) => setValues({ ...values, firstName: event.target.value })}
-        />
-        {errors.firstName && <p className="text-sm text-destructive">{errors.firstName}</p>}
-      </div>
+        <FormField label="Nombre" htmlFor="firstName" error={errors.firstName}>
+          <Input
+            id="firstName"
+            value={values.firstName}
+            onChange={(event) => setValues({ ...values, firstName: event.target.value })}
+          />
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="lastName" className="text-sm font-medium">
-          Apellido
-        </label>
-        <Input
-          id="lastName"
-          value={values.lastName}
-          onChange={(event) => setValues({ ...values, lastName: event.target.value })}
-        />
-        {errors.lastName && <p className="text-sm text-destructive">{errors.lastName}</p>}
-      </div>
+        <FormField label="Apellido" htmlFor="lastName" error={errors.lastName}>
+          <Input
+            id="lastName"
+            value={values.lastName}
+            onChange={(event) => setValues({ ...values, lastName: event.target.value })}
+          />
+        </FormField>
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting}>
-          {initialValues ? 'Guardar' : 'Crear'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+        <div className="flex gap-2 pt-1">
+          <Button type="submit" disabled={submitting}>
+            {initialValues ? 'Guardar' : 'Crear'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Card>
   )
 }

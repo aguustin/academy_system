@@ -43,10 +43,19 @@ export function Sidebar(): React.JSX.Element {
     <aside
       className={cn(
         'flex shrink-0 flex-col border-r border-border bg-background transition-[width] duration-200',
-        collapsed ? 'w-16' : 'w-56'
+        collapsed ? 'w-16' : 'w-60'
       )}
     >
-      <nav className="flex-1 space-y-1 p-2">
+      <div className="flex h-14 shrink-0 items-center gap-2 px-4">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+          SA
+        </div>
+        {!collapsed && (
+          <span className="truncate text-sm font-semibold text-foreground">Sistema Académico</span>
+        )}
+      </div>
+
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
         {navItems.map(({ label, icon: Icon, to }) =>
           to ? (
             <NavLink
@@ -55,36 +64,39 @@ export function Sidebar(): React.JSX.Element {
               end
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
                 )
               }
             >
-              <Icon className="size-4 shrink-0" />
-              {!collapsed && <span>{label}</span>}
+              <Icon className="size-4 shrink-0" strokeWidth={2} />
+              {!collapsed && <span className="truncate">{label}</span>}
             </NavLink>
           ) : (
             <span
               key={label}
               aria-disabled="true"
-              className="flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/50"
+              className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground/40"
             >
-              <Icon className="size-4 shrink-0" />
-              {!collapsed && <span>{label}</span>}
+              <Icon className="size-4 shrink-0" strokeWidth={2} />
+              {!collapsed && <span className="truncate">{label}</span>}
             </span>
           )
         )}
       </nav>
-      <button
-        type="button"
-        onClick={() => setCollapsed((prev) => !prev)}
-        aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-        className="m-2 flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-      >
-        {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-      </button>
+
+      <div className="border-t border-border p-2">
+        <button
+          type="button"
+          onClick={() => setCollapsed((prev) => !prev)}
+          aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+          className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+        >
+          {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+        </button>
+      </div>
     </aside>
   )
 }

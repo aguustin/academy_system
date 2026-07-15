@@ -1,6 +1,7 @@
-import { LogOut, User } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { Badge } from './ui/badge'
 
 const ROLE_LABELS = {
   admin: 'Administración',
@@ -18,22 +19,26 @@ export function Header(): React.JSX.Element {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-      <span className="font-semibold">Sistema Académico</span>
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <User className="size-4" />
-          <span>{user ? `${user.username} · ${ROLE_LABELS[user.role]}` : 'Invitado'}</span>
+    <header className="flex h-14 shrink-0 items-center justify-end gap-4 border-b border-border bg-background/95 px-8 backdrop-blur-sm">
+      {user && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex size-7 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+              {user.username.slice(0, 2).toUpperCase()}
+            </div>
+            <span className="text-sm font-medium text-foreground">{user.username}</span>
+          </div>
+          <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-accent hover:text-accent-foreground"
-        >
-          <LogOut className="size-4" />
-          Salir
-        </button>
-      </div>
+      )}
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+      >
+        <LogOut className="size-4" />
+        Salir
+      </button>
     </header>
   )
 }

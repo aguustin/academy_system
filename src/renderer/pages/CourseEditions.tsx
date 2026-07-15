@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { CalendarRange } from 'lucide-react'
 import type {
   CourseEdition,
   CourseEditionInput,
@@ -7,6 +8,9 @@ import type {
 } from '../../shared/courses'
 import type { Teacher } from '../../shared/teachers'
 import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
+import { PageHeader } from '../components/ui/page-header'
+import { EmptyState } from '../components/ui/empty-state'
 import {
   Table,
   TableBody,
@@ -26,6 +30,12 @@ const STATUS_LABELS: Record<CourseEditionStatus, string> = {
   upcoming: 'Próxima',
   active: 'Activa',
   finished: 'Finalizada'
+}
+
+const STATUS_BADGE_VARIANT: Record<CourseEditionStatus, 'secondary' | 'success' | 'outline'> = {
+  upcoming: 'secondary',
+  active: 'success',
+  finished: 'outline'
 }
 
 function formatDate(date: Date): string {
@@ -80,8 +90,8 @@ export function CourseEditions(): React.JSX.Element {
 
   if (mode.type === 'create') {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Nueva edición</h1>
+      <div className="space-y-6">
+        <PageHeader title="Nueva edición" />
         <CourseEditionForm
           teachers={teachers}
           courseTemplates={courseTemplates}
@@ -95,9 +105,9 @@ export function CourseEditions(): React.JSX.Element {
   if (mode.type === 'edit') {
     const { courseEdition } = mode
     return (
-      <div className="space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-2xl font-semibold">Editar edición</h1>
+      <div className="space-y-10">
+        <div className="space-y-6">
+          <PageHeader title="Editar edición" />
           <CourseEditionForm
             initialValues={courseEdition}
             teachers={teachers}
@@ -113,16 +123,21 @@ export function CourseEditions(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Ediciones</h1>
-        <Button onClick={() => setMode({ type: 'create' })}>Crear edición</Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Ediciones"
+        action={<Button onClick={() => setMode({ type: 'create' })}>Crear edición</Button>}
+      />
 
       {courseEditions === null ? (
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : courseEditions.length === 0 ? (
-        <p className="text-muted-foreground">No hay ediciones cargadas todavía.</p>
+        <EmptyState
+          icon={CalendarRange}
+          title="No hay ediciones cargadas todavía"
+          description="Creá la primera edición para empezar a inscribir alumnos."
+          action={<Button onClick={() => setMode({ type: 'create' })}>Crear edición</Button>}
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -138,26 +153,34 @@ export function CourseEditions(): React.JSX.Element {
           <TableBody>
             {courseEditions.map((courseEdition) => (
               <TableRow key={courseEdition.id}>
-                <TableCell>{templateName(courseEdition.templateId)}</TableCell>
+                <TableCell className="font-medium">
+                  {templateName(courseEdition.templateId)}
+                </TableCell>
                 <TableCell>{teacherName(courseEdition.teacherId)}</TableCell>
                 <TableCell>{formatDate(courseEdition.startDate)}</TableCell>
                 <TableCell>{formatDate(courseEdition.endDate)}</TableCell>
-                <TableCell>{STATUS_LABELS[courseEdition.status]}</TableCell>
-                <TableCell className="space-x-2 text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMode({ type: 'edit', courseEdition })}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(courseEdition.id)}
-                  >
-                    Eliminar
-                  </Button>
+                <TableCell>
+                  <Badge variant={STATUS_BADGE_VARIANT[courseEdition.status]}>
+                    {STATUS_LABELS[courseEdition.status]}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMode({ type: 'edit', courseEdition })}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(courseEdition.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

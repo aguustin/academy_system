@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MyCourses } from '../components/MyCourses'
 import { CourseDetail } from '../components/CourseDetail'
+import { PageHeader } from '../components/ui/page-header'
 
 type ViewMode = { type: 'list' } | { type: 'detail'; courseEditionId: string }
 
@@ -17,8 +18,8 @@ export function TeacherDashboard(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Mis Cursos</h1>
+    <div className="space-y-6">
+      <PageHeader title="Mis Cursos" description="Cursos que tenés asignados como tallerista." />
       <MyCourses onSelect={(courseEditionId) => setMode({ type: 'detail', courseEditionId })} />
     </div>
   )

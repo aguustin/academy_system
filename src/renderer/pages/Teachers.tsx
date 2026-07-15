@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Users } from 'lucide-react'
 import type { Teacher } from '../../shared/teachers'
 import type { TeacherInput } from '../../shared/electron-api'
 import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
+import { PageHeader } from '../components/ui/page-header'
+import { EmptyState } from '../components/ui/empty-state'
 import {
   Table,
   TableBody,
@@ -47,8 +51,8 @@ export function Teachers(): React.JSX.Element {
 
   if (mode.type === 'create') {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Nuevo profesor</h1>
+      <div className="space-y-6">
+        <PageHeader title="Nuevo profesor" />
         <TeacherForm onSubmit={handleCreate} onCancel={() => setMode({ type: 'list' })} />
       </div>
     )
@@ -57,8 +61,8 @@ export function Teachers(): React.JSX.Element {
   if (mode.type === 'edit') {
     const { teacher } = mode
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Editar profesor</h1>
+      <div className="space-y-6">
+        <PageHeader title="Editar profesor" />
         <TeacherForm
           initialValues={teacher}
           onSubmit={(values) => handleUpdate(teacher.id, values)}
@@ -69,16 +73,21 @@ export function Teachers(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Profesores</h1>
-        <Button onClick={() => setMode({ type: 'create' })}>Crear profesor</Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Profesores"
+        action={<Button onClick={() => setMode({ type: 'create' })}>Crear profesor</Button>}
+      />
 
       {teachers === null ? (
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : teachers.length === 0 ? (
-        <p className="text-muted-foreground">No hay profesores cargados todavía.</p>
+        <EmptyState
+          icon={Users}
+          title="No hay profesores cargados todavía"
+          description="Creá el primer profesor para empezar a asignar cursos."
+          action={<Button onClick={() => setMode({ type: 'create' })}>Crear profesor</Button>}
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -94,24 +103,34 @@ export function Teachers(): React.JSX.Element {
           <TableBody>
             {teachers.map((teacher) => (
               <TableRow key={teacher.id}>
-                <TableCell>
+                <TableCell className="font-medium">
                   {teacher.firstName} {teacher.lastName}
                 </TableCell>
                 <TableCell>{teacher.dni}</TableCell>
                 <TableCell>{teacher.email}</TableCell>
                 <TableCell>{teacher.phone}</TableCell>
-                <TableCell>{teacher.active ? 'Sí' : 'No'}</TableCell>
-                <TableCell className="space-x-2 text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMode({ type: 'edit', teacher })}
-                  >
-                    Editar
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(teacher.id)}>
-                    Eliminar
-                  </Button>
+                <TableCell>
+                  <Badge variant={teacher.active ? 'success' : 'secondary'}>
+                    {teacher.active ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMode({ type: 'edit', teacher })}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(teacher.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

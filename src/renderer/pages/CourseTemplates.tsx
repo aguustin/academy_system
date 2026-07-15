@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
+import { BookOpen, FileText } from 'lucide-react'
 import type { CourseTemplate } from '../../shared/courses'
 import type { CourseTemplateInput } from '../../shared/electron-api'
 import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
+import { Card } from '../components/ui/card'
+import { PageHeader } from '../components/ui/page-header'
+import { EmptyState } from '../components/ui/empty-state'
 import {
   Table,
   TableBody,
@@ -65,13 +70,19 @@ function CourseProgramSection({
   }
 
   return (
-    <div className="space-y-2">
-      <h2 className="text-lg font-semibold">Programa del curso</h2>
-      <p className="text-sm text-muted-foreground">
-        Programa:{' '}
-        {courseTemplate.programFile ? programFileName(courseTemplate.programFile) : 'Sin archivo'}
-      </p>
-      <div className="flex gap-2">
+    <Card className="max-w-md space-y-3 p-6">
+      <h2 className="text-lg font-semibold tracking-tight text-foreground">Programa del curso</h2>
+      <div className="flex items-center gap-2 text-sm">
+        <FileText className="size-4 shrink-0 text-muted-foreground" />
+        {courseTemplate.programFile ? (
+          <span className="font-medium text-foreground">
+            {programFileName(courseTemplate.programFile)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">Sin archivo</span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
         {courseTemplate.programFile ? (
           <>
             <Button variant="outline" size="sm" onClick={handleOpen} disabled={working}>
@@ -91,7 +102,7 @@ function CourseProgramSection({
         )}
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
+    </Card>
   )
 }
 
@@ -131,8 +142,8 @@ export function CourseTemplates(): React.JSX.Element {
 
   if (mode.type === 'create') {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Nuevo curso</h1>
+      <div className="space-y-6">
+        <PageHeader title="Nuevo curso" />
         <CourseTemplateForm onSubmit={handleCreate} onCancel={() => setMode({ type: 'list' })} />
       </div>
     )
@@ -141,13 +152,15 @@ export function CourseTemplates(): React.JSX.Element {
   if (mode.type === 'edit') {
     const { courseTemplate } = mode
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Editar curso</h1>
-        <CourseTemplateForm
-          initialValues={courseTemplate}
-          onSubmit={(values) => handleUpdate(courseTemplate.id, values)}
-          onCancel={() => setMode({ type: 'list' })}
-        />
+      <div className="space-y-8">
+        <div className="space-y-6">
+          <PageHeader title="Editar curso" />
+          <CourseTemplateForm
+            initialValues={courseTemplate}
+            onSubmit={(values) => handleUpdate(courseTemplate.id, values)}
+            onCancel={() => setMode({ type: 'list' })}
+          />
+        </div>
         <CourseProgramSection
           courseTemplate={courseTemplate}
           onChange={(updated) => setMode({ type: 'edit', courseTemplate: updated })}
@@ -157,16 +170,21 @@ export function CourseTemplates(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Catálogo de Cursos</h1>
-        <Button onClick={() => setMode({ type: 'create' })}>Crear curso</Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Catálogo de Cursos"
+        action={<Button onClick={() => setMode({ type: 'create' })}>Crear curso</Button>}
+      />
 
       {courseTemplates === null ? (
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : courseTemplates.length === 0 ? (
-        <p className="text-muted-foreground">No hay cursos cargados todavía.</p>
+        <EmptyState
+          icon={BookOpen}
+          title="No hay cursos cargados todavía"
+          description="Creá el primer curso del catálogo para poder generar ediciones."
+          action={<Button onClick={() => setMode({ type: 'create' })}>Crear curso</Button>}
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -180,24 +198,32 @@ export function CourseTemplates(): React.JSX.Element {
           <TableBody>
             {courseTemplates.map((courseTemplate) => (
               <TableRow key={courseTemplate.id}>
-                <TableCell>{courseTemplate.name}</TableCell>
-                <TableCell>{courseTemplate.description}</TableCell>
-                <TableCell>{courseTemplate.active ? 'Sí' : 'No'}</TableCell>
-                <TableCell className="space-x-2 text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMode({ type: 'edit', courseTemplate })}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(courseTemplate.id)}
-                  >
-                    Eliminar
-                  </Button>
+                <TableCell className="font-medium">{courseTemplate.name}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {courseTemplate.description}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={courseTemplate.active ? 'success' : 'secondary'}>
+                    {courseTemplate.active ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMode({ type: 'edit', courseTemplate })}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(courseTemplate.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

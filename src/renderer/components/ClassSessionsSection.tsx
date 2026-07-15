@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { CalendarCheck } from 'lucide-react'
 import type { ClassSession } from '../../shared/class-sessions'
 import { Button } from './ui/button'
+import { EmptyState } from './ui/empty-state'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 
 interface ClassSessionsSectionProps {
@@ -32,18 +34,22 @@ export function ClassSessionsSection({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Clases del curso</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Clases del curso</h2>
         <Button type="button" size="sm" onClick={handleGenerate} disabled={generating}>
           Generar clases
         </Button>
       </div>
 
       {classSessions === null ? (
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : classSessions.length === 0 ? (
-        <p className="text-muted-foreground">Todavía no se generaron clases para esta edición.</p>
+        <EmptyState
+          icon={CalendarCheck}
+          title="Todavía no se generaron clases para esta edición"
+          description="Usá el botón «Generar clases» para crearlas a partir de los horarios definidos."
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -55,7 +61,7 @@ export function ClassSessionsSection({
           <TableBody>
             {classSessions.map((classSession) => (
               <TableRow key={classSession.id}>
-                <TableCell>{formatDate(classSession.date)}</TableCell>
+                <TableCell className="font-medium">{formatDate(classSession.date)}</TableCell>
                 <TableCell>
                   {classSession.startTime} - {classSession.endTime}
                 </TableCell>

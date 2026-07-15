@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Users } from 'lucide-react'
 import type { Student } from '../../shared/students'
 import type { Enrollment } from '../../shared/enrollments'
 import { Button } from './ui/button'
 import { Select } from './ui/select'
+import { EmptyState } from './ui/empty-state'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 
 interface EnrollmentsSectionProps {
@@ -46,8 +48,8 @@ export function EnrollmentsSection({
   const availableStudents = students.filter((student) => !enrolledIds.has(student.id))
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-semibold">Alumnos inscriptos</h2>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold tracking-tight text-foreground">Alumnos inscriptos</h2>
 
       <div className="flex max-w-md items-center gap-2">
         <Select
@@ -67,9 +69,13 @@ export function EnrollmentsSection({
       </div>
 
       {enrollments === null ? (
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : enrollments.length === 0 ? (
-        <p className="text-muted-foreground">No hay alumnos inscriptos todavía.</p>
+        <EmptyState
+          icon={Users}
+          title="No hay alumnos inscriptos todavía"
+          description="Seleccioná un alumno de la lista para inscribirlo en esta edición."
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -84,7 +90,7 @@ export function EnrollmentsSection({
               const student = findStudent(enrollment.studentId)
               return (
                 <TableRow key={enrollment.id}>
-                  <TableCell>
+                  <TableCell className="font-medium">
                     {student ? `${student.firstName} ${student.lastName}` : enrollment.studentId}
                   </TableCell>
                   <TableCell>{student?.dni ?? '—'}</TableCell>

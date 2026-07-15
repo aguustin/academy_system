@@ -14,6 +14,8 @@ import type { Teacher } from '../../shared/teachers'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Select } from './ui/select'
+import { Card } from './ui/card'
+import { FormField } from './ui/form-field'
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
   monday: 'Lunes',
@@ -110,141 +112,133 @@ export function CourseEditionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-md flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="templateId" className="text-sm font-medium">
-          Curso
-        </label>
-        <Select
-          id="templateId"
-          required
-          value={templateId}
-          onChange={(event) => setTemplateId(event.target.value)}
-        >
-          <option value="" disabled>
-            Seleccionar...
-          </option>
-          {courseTemplates.map((courseTemplate) => (
-            <option key={courseTemplate.id} value={courseTemplate.id}>
-              {courseTemplate.name}
+    <Card className="max-w-md p-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <FormField label="Curso" htmlFor="templateId" error={errors.templateId}>
+          <Select
+            id="templateId"
+            required
+            value={templateId}
+            onChange={(event) => setTemplateId(event.target.value)}
+          >
+            <option value="" disabled>
+              Seleccionar...
             </option>
-          ))}
-        </Select>
-        {errors.templateId && <p className="text-sm text-destructive">{errors.templateId}</p>}
-      </div>
+            {courseTemplates.map((courseTemplate) => (
+              <option key={courseTemplate.id} value={courseTemplate.id}>
+                {courseTemplate.name}
+              </option>
+            ))}
+          </Select>
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="teacherId" className="text-sm font-medium">
-          Profesor
-        </label>
-        <Select
-          id="teacherId"
-          required
-          value={teacherId}
-          onChange={(event) => setTeacherId(event.target.value)}
-        >
-          <option value="" disabled>
-            Seleccionar...
-          </option>
-          {teachers.map((teacher) => (
-            <option key={teacher.id} value={teacher.id}>
-              {teacher.firstName} {teacher.lastName}
+        <FormField label="Profesor" htmlFor="teacherId" error={errors.teacherId}>
+          <Select
+            id="teacherId"
+            required
+            value={teacherId}
+            onChange={(event) => setTeacherId(event.target.value)}
+          >
+            <option value="" disabled>
+              Seleccionar...
             </option>
-          ))}
-        </Select>
-        {errors.teacherId && <p className="text-sm text-destructive">{errors.teacherId}</p>}
-      </div>
+            {teachers.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.firstName} {teacher.lastName}
+              </option>
+            ))}
+          </Select>
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="startDate" className="text-sm font-medium">
-          Fecha inicio
-        </label>
-        <Input
-          id="startDate"
-          type="date"
-          required
-          value={startDate}
-          onChange={(event) => setStartDate(event.target.value)}
-        />
-        {errors.startDate && <p className="text-sm text-destructive">{errors.startDate}</p>}
-      </div>
+        <FormField label="Fecha inicio" htmlFor="startDate" error={errors.startDate}>
+          <Input
+            id="startDate"
+            type="date"
+            required
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+          />
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="endDate" className="text-sm font-medium">
-          Fecha fin
-        </label>
-        <Input
-          id="endDate"
-          type="date"
-          required
-          value={endDate}
-          onChange={(event) => setEndDate(event.target.value)}
-        />
-        {errors.endDate && <p className="text-sm text-destructive">{errors.endDate}</p>}
-      </div>
+        <FormField label="Fecha fin" htmlFor="endDate" error={errors.endDate}>
+          <Input
+            id="endDate"
+            type="date"
+            required
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+          />
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="status" className="text-sm font-medium">
-          Estado
-        </label>
-        <Select
-          id="status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as CourseEditionStatus)}
-        >
-          {courseEditionStatusSchema.options.map((value) => (
-            <option key={value} value={value}>
-              {STATUS_LABELS[value]}
-            </option>
-          ))}
-        </Select>
-      </div>
+        <FormField label="Estado" htmlFor="status">
+          <Select
+            id="status"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as CourseEditionStatus)}
+          >
+            {courseEditionStatusSchema.options.map((value) => (
+              <option key={value} value={value}>
+                {STATUS_LABELS[value]}
+              </option>
+            ))}
+          </Select>
+        </FormField>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Horarios</span>
-        {schedules.map((schedule, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <Select
-              value={schedule.dayOfWeek}
-              onChange={(event) =>
-                updateSchedule(index, { dayOfWeek: event.target.value as DayOfWeek })
-              }
-            >
-              {dayOfWeekSchema.options.map((value) => (
-                <option key={value} value={value}>
-                  {DAY_LABELS[value]}
-                </option>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-foreground">Horarios</span>
+          {schedules.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+              {schedules.map((schedule, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Select
+                    value={schedule.dayOfWeek}
+                    onChange={(event) =>
+                      updateSchedule(index, { dayOfWeek: event.target.value as DayOfWeek })
+                    }
+                  >
+                    {dayOfWeekSchema.options.map((value) => (
+                      <option key={value} value={value}>
+                        {DAY_LABELS[value]}
+                      </option>
+                    ))}
+                  </Select>
+                  <Input
+                    type="time"
+                    value={schedule.startTime}
+                    onChange={(event) => updateSchedule(index, { startTime: event.target.value })}
+                  />
+                  <Input
+                    type="time"
+                    value={schedule.endTime}
+                    onChange={(event) => updateSchedule(index, { endTime: event.target.value })}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeSchedule(index)}
+                  >
+                    Quitar
+                  </Button>
+                </div>
               ))}
-            </Select>
-            <Input
-              type="time"
-              value={schedule.startTime}
-              onChange={(event) => updateSchedule(index, { startTime: event.target.value })}
-            />
-            <Input
-              type="time"
-              value={schedule.endTime}
-              onChange={(event) => updateSchedule(index, { endTime: event.target.value })}
-            />
-            <Button type="button" variant="outline" size="sm" onClick={() => removeSchedule(index)}>
-              Quitar
-            </Button>
-          </div>
-        ))}
-        <Button type="button" variant="outline" size="sm" onClick={addSchedule}>
-          Agregar horario
-        </Button>
-        {errors.schedules && <p className="text-sm text-destructive">{errors.schedules}</p>}
-      </div>
+            </div>
+          )}
+          <Button type="button" variant="outline" size="sm" onClick={addSchedule}>
+            Agregar horario
+          </Button>
+          {errors.schedules && <p className="text-sm text-destructive">{errors.schedules}</p>}
+        </div>
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting}>
-          {initialValues ? 'Guardar' : 'Crear'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+        <div className="flex gap-2 pt-1">
+          <Button type="submit" disabled={submitting}>
+            {initialValues ? 'Guardar' : 'Crear'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Card>
   )
 }

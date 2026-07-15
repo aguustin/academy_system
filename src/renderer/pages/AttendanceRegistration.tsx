@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { AttendanceEditionOption, RegisterAttendanceResult } from '../../shared/attendance'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { Card } from '../components/ui/card'
+import { FormField } from '../components/ui/form-field'
 
 type ViewState =
   | { type: 'idle' }
@@ -54,11 +56,16 @@ export function AttendanceRegistration(): React.JSX.Element {
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-12">
-      <h1 className="text-2xl font-semibold">Registro de asistencia</h1>
+      <div className="space-y-1 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Registro de asistencia
+        </h1>
+        <p className="text-sm text-muted-foreground">Ingresá tu DNI para registrar tu llegada.</p>
+      </div>
 
       {state.type === 'select' ? (
-        <div className="w-full space-y-3 text-center">
-          <p>{state.studentName}: elegí el curso</p>
+        <Card className="w-full space-y-3 p-6 text-center">
+          <p className="text-sm font-medium text-foreground">{state.studentName}: elegí el curso</p>
           <div className="flex flex-col gap-2">
             {state.options.map((option, index) => (
               <Button
@@ -70,21 +77,20 @@ export function AttendanceRegistration(): React.JSX.Element {
               </Button>
             ))}
           </div>
-        </div>
+        </Card>
       ) : (
         <form onSubmit={handleSubmit} className="flex w-full flex-col items-center gap-4">
-          <div className="w-full space-y-1">
-            <label htmlFor="dni" className="text-sm font-medium">
-              DNI
-            </label>
-            <Input
-              id="dni"
-              ref={inputRef}
-              autoComplete="off"
-              value={dni}
-              disabled={submitting}
-              onChange={(event) => setDni(event.target.value)}
-            />
+          <div className="w-full">
+            <FormField label="DNI" htmlFor="dni">
+              <Input
+                id="dni"
+                ref={inputRef}
+                autoComplete="off"
+                value={dni}
+                disabled={submitting}
+                onChange={(event) => setDni(event.target.value)}
+              />
+            </FormField>
           </div>
           <Button type="submit" disabled={submitting || !dni.trim()} className="w-full">
             Registrar
@@ -93,26 +99,26 @@ export function AttendanceRegistration(): React.JSX.Element {
       )}
 
       {state.type === 'result' && (
-        <div className="w-full space-y-1 rounded-md border border-border p-4 text-center">
+        <Card className="w-full space-y-1 p-6 text-center">
           {state.result.status === 'registered' && (
             <>
-              <p className="font-medium">{state.result.studentName}</p>
-              <p className="text-muted-foreground">{state.result.courseName}</p>
-              <p className="text-muted-foreground">Hora: {state.result.time}</p>
+              <p className="font-medium text-foreground">{state.result.studentName}</p>
+              <p className="text-sm text-muted-foreground">{state.result.courseName}</p>
+              <p className="text-sm text-muted-foreground">Hora: {state.result.time}</p>
             </>
           )}
           {state.result.status === 'already-registered' && (
-            <p className="text-destructive">La asistencia ya fue registrada hoy.</p>
+            <p className="text-sm text-destructive">La asistencia ya fue registrada hoy.</p>
           )}
           {state.result.status === 'student-not-found' && (
-            <p className="text-destructive">No se encontró ningún alumno con ese DNI.</p>
+            <p className="text-sm text-destructive">No se encontró ningún alumno con ese DNI.</p>
           )}
           {state.result.status === 'no-active-enrollment' && (
-            <p className="text-destructive">
+            <p className="text-sm text-destructive">
               {state.result.studentName} no tiene inscripciones activas.
             </p>
           )}
-        </div>
+        </Card>
       )}
     </div>
   )

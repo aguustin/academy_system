@@ -3,6 +3,9 @@ import { z } from 'zod'
 import { courseTemplateSchema, type CourseTemplate } from '../../shared/courses'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { Card } from './ui/card'
+import { FormField } from './ui/form-field'
+import { CheckboxField } from './ui/checkbox-field'
 
 const courseTemplateFormSchema = courseTemplateSchema.omit({
   id: true,
@@ -54,52 +57,40 @@ export function CourseTemplateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-md flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="name" className="text-sm font-medium">
-          Nombre
-        </label>
-        <Input
-          id="name"
-          value={values.name}
-          onChange={(event) => setValues({ ...values, name: event.target.value })}
-        />
-        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-      </div>
+    <Card className="max-w-md p-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <FormField label="Nombre" htmlFor="name" error={errors.name}>
+          <Input
+            id="name"
+            value={values.name}
+            onChange={(event) => setValues({ ...values, name: event.target.value })}
+          />
+        </FormField>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="description" className="text-sm font-medium">
-          Descripción
-        </label>
-        <Input
-          id="description"
-          value={values.description}
-          onChange={(event) => setValues({ ...values, description: event.target.value })}
-        />
-        {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
-      </div>
+        <FormField label="Descripción" htmlFor="description" error={errors.description}>
+          <Input
+            id="description"
+            value={values.description}
+            onChange={(event) => setValues({ ...values, description: event.target.value })}
+          />
+        </FormField>
 
-      <div className="flex items-center gap-2">
-        <input
-          id="active"
-          type="checkbox"
+        <CheckboxField
+          label="Activo"
+          htmlFor="active"
           checked={values.active}
-          onChange={(event) => setValues({ ...values, active: event.target.checked })}
-          className="size-4 rounded border-input"
+          onChange={(checked) => setValues({ ...values, active: checked })}
         />
-        <label htmlFor="active" className="text-sm font-medium">
-          Activo
-        </label>
-      </div>
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={submitting}>
-          {initialValues ? 'Guardar' : 'Crear'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+        <div className="flex gap-2 pt-1">
+          <Button type="submit" disabled={submitting}>
+            {initialValues ? 'Guardar' : 'Crear'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Card>
   )
 }

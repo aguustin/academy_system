@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { GraduationCap } from 'lucide-react'
 import type { Student } from '../../shared/students'
 import type { StudentInput } from '../../shared/electron-api'
 import { Button } from '../components/ui/button'
+import { PageHeader } from '../components/ui/page-header'
+import { EmptyState } from '../components/ui/empty-state'
 import {
   Table,
   TableBody,
@@ -47,8 +50,8 @@ export function Students(): React.JSX.Element {
 
   if (mode.type === 'create') {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Nuevo alumno</h1>
+      <div className="space-y-6">
+        <PageHeader title="Nuevo alumno" />
         <StudentForm onSubmit={handleCreate} onCancel={() => setMode({ type: 'list' })} />
       </div>
     )
@@ -57,8 +60,8 @@ export function Students(): React.JSX.Element {
   if (mode.type === 'edit') {
     const { student } = mode
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Editar alumno</h1>
+      <div className="space-y-6">
+        <PageHeader title="Editar alumno" />
         <StudentForm
           initialValues={student}
           onSubmit={(values) => handleUpdate(student.id, values)}
@@ -69,16 +72,21 @@ export function Students(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Alumnos</h1>
-        <Button onClick={() => setMode({ type: 'create' })}>Crear alumno</Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Alumnos"
+        action={<Button onClick={() => setMode({ type: 'create' })}>Crear alumno</Button>}
+      />
 
       {students === null ? (
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : students.length === 0 ? (
-        <p className="text-muted-foreground">No hay alumnos cargados todavía.</p>
+        <EmptyState
+          icon={GraduationCap}
+          title="No hay alumnos cargados todavía"
+          description="Creá el primer alumno para poder inscribirlo en una edición."
+          action={<Button onClick={() => setMode({ type: 'create' })}>Crear alumno</Button>}
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -91,21 +99,27 @@ export function Students(): React.JSX.Element {
           <TableBody>
             {students.map((student) => (
               <TableRow key={student.id}>
-                <TableCell>
+                <TableCell className="font-medium">
                   {student.firstName} {student.lastName}
                 </TableCell>
                 <TableCell>{student.dni}</TableCell>
-                <TableCell className="space-x-2 text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMode({ type: 'edit', student })}
-                  >
-                    Editar
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(student.id)}>
-                    Eliminar
-                  </Button>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMode({ type: 'edit', student })}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(student.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

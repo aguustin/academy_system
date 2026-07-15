@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
+import { ClipboardList } from 'lucide-react'
 import type { Attendance, AttendanceRegisteredBy, AttendanceStatus } from '../../shared/attendance'
 import type { CourseEdition, CourseTemplate } from '../../shared/courses'
 import type { Student } from '../../shared/students'
 import { Input } from '../components/ui/input'
 import { Select } from '../components/ui/select'
+import { Badge } from '../components/ui/badge'
+import { PageHeader } from '../components/ui/page-header'
+import { EmptyState } from '../components/ui/empty-state'
+import { FormField } from '../components/ui/form-field'
 import {
   Table,
   TableBody,
@@ -17,6 +22,12 @@ const STATUS_LABELS: Record<AttendanceStatus, string> = {
   present: 'Presente',
   absent: 'Ausente',
   justified: 'Justificada'
+}
+
+const STATUS_BADGE_VARIANT: Record<AttendanceStatus, 'success' | 'destructive' | 'secondary'> = {
+  present: 'success',
+  absent: 'destructive',
+  justified: 'secondary'
 }
 
 const REGISTERED_BY_LABELS: Record<AttendanceRegisteredBy, string> = {
@@ -60,55 +71,57 @@ export function AttendanceQuery(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Asistencias</h1>
+    <div className="space-y-6">
+      <PageHeader title="Asistencias" />
 
       <div className="flex max-w-xl gap-4">
-        <div className="flex-1 space-y-1">
-          <label htmlFor="courseEditionId" className="text-sm font-medium">
-            Edición
-          </label>
-          <Select
-            id="courseEditionId"
-            value={courseEditionId}
-            onChange={(event) => {
-              setCourseEditionId(event.target.value)
-              setAttendances(null)
-            }}
-          >
-            <option value="">Seleccionar...</option>
-            {courseEditions.map((courseEdition) => (
-              <option key={courseEdition.id} value={courseEdition.id}>
-                {templateName(courseEdition.templateId)}
-              </option>
-            ))}
-          </Select>
+        <div className="flex-1">
+          <FormField label="Edición" htmlFor="courseEditionId">
+            <Select
+              id="courseEditionId"
+              value={courseEditionId}
+              onChange={(event) => {
+                setCourseEditionId(event.target.value)
+                setAttendances(null)
+              }}
+            >
+              <option value="">Seleccionar...</option>
+              {courseEditions.map((courseEdition) => (
+                <option key={courseEdition.id} value={courseEdition.id}>
+                  {templateName(courseEdition.templateId)}
+                </option>
+              ))}
+            </Select>
+          </FormField>
         </div>
 
-        <div className="flex-1 space-y-1">
-          <label htmlFor="date" className="text-sm font-medium">
-            Fecha
-          </label>
-          <Input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(event) => {
-              setDate(event.target.value)
-              setAttendances(null)
-            }}
-          />
+        <div className="flex-1">
+          <FormField label="Fecha" htmlFor="date">
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(event) => {
+                setDate(event.target.value)
+                setAttendances(null)
+              }}
+            />
+          </FormField>
         </div>
       </div>
 
       {attendances === null ? (
-        <p className="text-muted-foreground">
-          Seleccioná una edición y una fecha para ver las asistencias.
-        </p>
+        <EmptyState
+          icon={ClipboardList}
+          title="Seleccioná una edición y una fecha"
+          description="Elegí ambos filtros para ver las asistencias registradas."
+        />
       ) : attendances.length === 0 ? (
-        <p className="text-muted-foreground">
-          No hay asistencias registradas para esa edición y fecha.
-        </p>
+        <EmptyState
+          icon={ClipboardList}
+          title="No hay asistencias registradas"
+          description="No se encontraron registros para esa edición y fecha."
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -125,10 +138,14 @@ export function AttendanceQuery(): React.JSX.Element {
               const info = studentInfo(attendance.studentId)
               return (
                 <TableRow key={attendance.id}>
-                  <TableCell>{info.name}</TableCell>
+                  <TableCell className="font-medium">{info.name}</TableCell>
                   <TableCell>{info.dni}</TableCell>
                   <TableCell>{attendance.time}</TableCell>
-                  <TableCell>{STATUS_LABELS[attendance.status]}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_BADGE_VARIANT[attendance.status]}>
+                      {STATUS_LABELS[attendance.status]}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{REGISTERED_BY_LABELS[attendance.registeredBy]}</TableCell>
                 </TableRow>
               )
