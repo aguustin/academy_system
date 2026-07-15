@@ -8,6 +8,7 @@ const courseTemplateSchema = new Schema<CourseTemplateDocument>(
     name: { type: String, required: true },
     description: { type: String, required: false },
     active: { type: Boolean, required: true },
+    programFile: { type: String, required: false, default: null },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true }
   },
@@ -17,11 +18,24 @@ const courseTemplateSchema = new Schema<CourseTemplateDocument>(
 const CourseTemplateModel = model<CourseTemplateDocument>('CourseTemplate', courseTemplateSchema)
 
 function toCourseTemplate(doc: HydratedDocument<CourseTemplateDocument>): CourseTemplate {
-  const { _id, name, description, active, createdAt, updatedAt } = doc
-  return { id: _id.toString(), name, description, active, createdAt, updatedAt }
+  const { _id, name, description, active, programFile, createdAt, updatedAt } = doc
+  return {
+    id: _id.toString(),
+    name,
+    description,
+    active,
+    programFile: programFile ?? null,
+    createdAt,
+    updatedAt
+  }
 }
 
-type CreateCourseTemplateInput = Omit<CourseTemplateDocument, 'createdAt' | 'updatedAt'>
+type CreateCourseTemplateInput = Omit<
+  CourseTemplateDocument,
+  'createdAt' | 'updatedAt' | 'programFile'
+> & {
+  programFile?: string | null
+}
 
 export async function createCourseTemplate(
   data: CreateCourseTemplateInput

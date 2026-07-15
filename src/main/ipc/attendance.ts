@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
-import { registerAttendance } from '../services/attendance-service'
+import {
+  getAttendanceSummary,
+  listAttendanceByClass,
+  registerAttendance,
+  saveClassAttendance
+} from '../services/attendance-service'
 import {
   findAttendanceByCourseEdition,
   findAttendanceByCourseEditionAndDate,
@@ -16,6 +21,15 @@ const registerInputSchema = z.object({
 const listInputSchema = z.object({
   courseEditionId: z.string(),
   date: z.date()
+})
+const saveClassAttendanceInputSchema = z.object({
+  classSessionId: z.string(),
+  entries: z.array(
+    z.object({
+      studentId: z.string(),
+      present: z.boolean()
+    })
+  )
 })
 
 export function registerAttendanceIpc(): void {
@@ -38,5 +52,18 @@ export function registerAttendanceIpc(): void {
   handleAuthenticated(IPC_CHANNELS.ATTENDANCE_LIST, (_event, data: unknown) => {
     const input = listInputSchema.parse(data)
     return findAttendanceByCourseEditionAndDate(input.courseEditionId, input.date)
+  })
+
+  handleAuthenticated(IPC_CHANNELS.ATTENDANCE_SAVE_CLASS_ATTENDANCE, (_event, data: unknown) => {
+    const input = saveClassAttendanceInputSchema.parse(data)
+    return saveClassAttendance(input.classSessionId, input.entries)
+  })
+
+  handleAuthenticated(IPC_CHANNELS.ATTENDANCE_LIST_BY_CLASS, (_event, classSessionId: unknown) => {
+    return listAttendanceByClass(idSchema.parse(classSessionId))
+  })
+
+  handleAuthenticated(IPC_CHANNELS.ATTENDANCE_GET_SUMMARY, (_event, courseEditionId: unknown) => {
+    return getAttendanceSummary(idSchema.parse(courseEditionId))
   })
 }

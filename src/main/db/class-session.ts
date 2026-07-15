@@ -40,3 +40,8 @@ export async function listClassSessionsByEdition(courseEditionId: string): Promi
   const docs = await ClassSessionModel.find({ courseEditionId }).sort({ date: 1 })
   return docs.map(toClassSession)
 }
+
+export async function findClassSessionById(id: string): Promise<ClassSession | null> {
+  const doc = await ClassSessionModel.findById(id)
+  return doc ? toClassSession(doc) : null
+}

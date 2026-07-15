@@ -6,6 +6,8 @@ export const courseTemplateSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   active: z.boolean(),
+  // Ruta relativa (dentro de userData/programs) del archivo del programa. El archivo en sí nunca se guarda en Mongo.
+  programFile: z.string().nullable().default(null),
   createdAt: z.date(),
   updatedAt: z.date()
 })

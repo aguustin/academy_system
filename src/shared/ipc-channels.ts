@@ -37,8 +37,21 @@ export const IPC_CHANNELS = {
   ATTENDANCE_FIND_BY_COURSE_EDITION: 'attendance:findByCourseEdition',
   ATTENDANCE_FIND_BY_STUDENT: 'attendance:findByStudent',
   ATTENDANCE_LIST: 'attendance:list',
+  ATTENDANCE_SAVE_CLASS_ATTENDANCE: 'attendance:saveClassAttendance',
+  ATTENDANCE_LIST_BY_CLASS: 'attendance:listByClass',
+  ATTENDANCE_GET_SUMMARY: 'attendance:getSummary',
   CLASS_SESSION_GENERATE: 'classSession:generate',
   CLASS_SESSION_LIST_BY_EDITION: 'classSession:listByEdition',
   TEACHER_COURSE_LIST_MY_COURSES: 'teacherCourse:listMyCourses',
-  TEACHER_COURSE_GET_DETAIL: 'teacherCourse:getDetail'
+  TEACHER_COURSE_GET_DETAIL: 'teacherCourse:getDetail',
+  EVALUATION_CREATE: 'evaluation:create',
+  EVALUATION_UPDATE: 'evaluation:update',
+  EVALUATION_DELETE: 'evaluation:delete',
+  EVALUATION_LIST: 'evaluation:list',
+  EVALUATION_SAVE_RESULTS: 'evaluation:saveResults',
+  EVALUATION_GET_RESULTS: 'evaluation:getResults',
+  CERTIFICATION_GET_STUDENT_CERTIFICATION: 'certification:getStudentCertification',
+  COURSE_PROGRAM_UPLOAD: 'courseProgram:upload',
+  COURSE_PROGRAM_OPEN: 'courseProgram:open',
+  COURSE_PROGRAM_REMOVE: 'courseProgram:remove'
 } as const

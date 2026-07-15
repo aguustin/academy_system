@@ -12,6 +12,89 @@ import {
 } from '../components/ui/table'
 import { CourseTemplateForm } from '../components/CourseTemplateForm'
 
+function programFileName(programFile: string): string {
+  return programFile.replace(/^\d+-/, '')
+}
+
+interface CourseProgramSectionProps {
+  courseTemplate: CourseTemplate
+  onChange: (courseTemplate: CourseTemplate) => void
+}
+
+function CourseProgramSection({
+  courseTemplate,
+  onChange
+}: CourseProgramSectionProps): React.JSX.Element {
+  const [working, setWorking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleUpload(): Promise<void> {
+    setError(null)
+    setWorking(true)
+    try {
+      const updated = await window.api.courseProgram.upload(courseTemplate.id)
+      onChange(updated)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo adjuntar el programa.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function handleOpen(): Promise<void> {
+    setError(null)
+    try {
+      await window.api.courseProgram.open(courseTemplate.id)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo abrir el programa.')
+    }
+  }
+
+  async function handleRemove(): Promise<void> {
+    if (!window.confirm('¿Eliminar el programa de este curso?')) return
+    setError(null)
+    setWorking(true)
+    try {
+      const updated = await window.api.courseProgram.remove(courseTemplate.id)
+      onChange(updated)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar el programa.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <h2 className="text-lg font-semibold">Programa del curso</h2>
+      <p className="text-sm text-muted-foreground">
+        Programa:{' '}
+        {courseTemplate.programFile ? programFileName(courseTemplate.programFile) : 'Sin archivo'}
+      </p>
+      <div className="flex gap-2">
+        {courseTemplate.programFile ? (
+          <>
+            <Button variant="outline" size="sm" onClick={handleOpen} disabled={working}>
+              Abrir
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleUpload} disabled={working}>
+              Reemplazar
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleRemove} disabled={working}>
+              Eliminar
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" onClick={handleUpload} disabled={working}>
+            Adjuntar programa
+          </Button>
+        )}
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  )
+}
+
 type ViewMode =
   { type: 'list' } | { type: 'create' } | { type: 'edit'; courseTemplate: CourseTemplate }
 
@@ -64,6 +147,10 @@ export function CourseTemplates(): React.JSX.Element {
           initialValues={courseTemplate}
           onSubmit={(values) => handleUpdate(courseTemplate.id, values)}
           onCancel={() => setMode({ type: 'list' })}
+        />
+        <CourseProgramSection
+          courseTemplate={courseTemplate}
+          onChange={(updated) => setMode({ type: 'edit', courseTemplate: updated })}
         />
       </div>
     )

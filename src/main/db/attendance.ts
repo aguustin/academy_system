@@ -11,6 +11,7 @@ const attendanceSchema = new Schema<AttendanceDocument>(
   {
     studentId: { type: String, required: true },
     courseEditionId: { type: String, required: true },
+    classSessionId: { type: String, required: false },
     date: { type: Date, required: true },
     time: { type: String, required: true },
     status: { type: String, enum: attendanceStatusSchema.options, required: true },
@@ -20,14 +21,27 @@ const attendanceSchema = new Schema<AttendanceDocument>(
   { collection: 'asistencias' }
 )
 
+attendanceSchema.index({ classSessionId: 1 })
+
 const AttendanceModel = model<AttendanceDocument>('Attendance', attendanceSchema)
 
 function toAttendance(doc: HydratedDocument<AttendanceDocument>): Attendance {
-  const { _id, studentId, courseEditionId, date, time, status, registeredBy, createdAt } = doc
+  const {
+    _id,
+    studentId,
+    courseEditionId,
+    classSessionId,
+    date,
+    time,
+    status,
+    registeredBy,
+    createdAt
+  } = doc
   return {
     id: _id.toString(),
     studentId,
     courseEditionId,
+    classSessionId,
     date,
     time,
     status,
@@ -71,6 +85,19 @@ export async function findAttendanceByCourseEditionAndDate(
     date: { $gte: startOfDay, $lt: endOfDay }
   })
   return docs.map(toAttendance)
+}
+
+export async function findAttendanceByClassSession(classSessionId: string): Promise<Attendance[]> {
+  const docs = await AttendanceModel.find({ classSessionId })
+  return docs.map(toAttendance)
+}
+
+export async function findAttendanceByClassSessionAndStudent(
+  classSessionId: string,
+  studentId: string
+): Promise<Attendance | null> {
+  const doc = await AttendanceModel.findOne({ classSessionId, studentId })
+  return doc ? toAttendance(doc) : null
 }
 
 export async function findAttendanceForToday(

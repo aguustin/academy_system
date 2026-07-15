@@ -8,7 +8,7 @@ export function RequireAuth(): React.JSX.Element | null {
   if (loading) return null
   if (!user) return <Navigate to="/login" replace />
   if (user.mustChangePassword) return <Navigate to="/cambiar-contrasena" replace />
-  if (user.role === 'teacher' && location.pathname === '/') {
+  if (user.role === 'teacher' && location.pathname !== '/mis-cursos') {
     return <Navigate to="/mis-cursos" replace />
   }
 

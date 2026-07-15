@@ -14,7 +14,8 @@ const idSchema = z.string()
 const createCourseTemplateInputSchema = courseTemplateSchema.omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  programFile: true
 })
 const updateCourseTemplateInputSchema = createCourseTemplateInputSchema.partial()
 

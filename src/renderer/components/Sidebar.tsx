@@ -20,28 +20,24 @@ export function Sidebar(): React.JSX.Element {
   const [collapsed, setCollapsed] = useState(false)
   const { user } = useAuth()
 
-  const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
-    ...(user?.role !== 'teacher'
-      ? [
-          { label: 'Profesores', icon: Users, to: '/profesores' },
-          { label: 'Catálogo de Cursos', icon: BookOpen, to: '/cursos' }
-        ]
-      : []),
-    { label: 'Ediciones', icon: CalendarRange, to: '/ediciones' },
-    { label: 'Registro de Asistencia', icon: CalendarCheck, to: '/asistencias/registro' },
-    { label: 'Asistencias', icon: ClipboardList, to: '/asistencias' },
-    ...(user?.role === 'teacher'
+  const navItems =
+    user?.role === 'teacher'
       ? [{ label: 'Mis Cursos', icon: BookOpen, to: '/mis-cursos' }]
-      : []),
-    ...(user?.role === 'admin'
-      ? [
-          { label: 'Usuarios', icon: UserCog, to: '/usuarios' },
-          { label: 'Alumnos', icon: GraduationCap, to: '/alumnos' }
+      : [
+          { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
+          { label: 'Profesores', icon: Users, to: '/profesores' },
+          { label: 'Catálogo de Cursos', icon: BookOpen, to: '/cursos' },
+          { label: 'Ediciones', icon: CalendarRange, to: '/ediciones' },
+          { label: 'Registro de Asistencia', icon: CalendarCheck, to: '/asistencias/registro' },
+          { label: 'Asistencias', icon: ClipboardList, to: '/asistencias' },
+          ...(user?.role === 'admin'
+            ? [
+                { label: 'Usuarios', icon: UserCog, to: '/usuarios' },
+                { label: 'Alumnos', icon: GraduationCap, to: '/alumnos' }
+              ]
+            : []),
+          { label: 'Reportes', icon: BarChart3 }
         ]
-      : []),
-    { label: 'Reportes', icon: BarChart3 }
-  ]
 
   return (
     <aside

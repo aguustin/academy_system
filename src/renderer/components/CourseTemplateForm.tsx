@@ -7,7 +7,8 @@ import { Input } from './ui/input'
 const courseTemplateFormSchema = courseTemplateSchema.omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  programFile: true
 })
 type CourseTemplateFormValues = z.infer<typeof courseTemplateFormSchema>
 

@@ -22,3 +22,22 @@ export const studentEvaluationSchema = z.object({
   updatedAt: z.date()
 })
 export type StudentEvaluation = z.infer<typeof studentEvaluationSchema>
+
+export type EvaluationResultStatus = 'not-evaluated' | 'passed' | 'failed'
+
+export interface EvaluationResultEntry {
+  studentId: string
+  passed: boolean
+}
+
+export interface EvaluationResultStudent {
+  studentId: string
+  firstName: string
+  lastName: string
+  status: EvaluationResultStatus
+}
+
+export interface EvaluationResults {
+  evaluation: Evaluation
+  students: EvaluationResultStudent[]
+}

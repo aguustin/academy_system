@@ -11,6 +11,9 @@ import { registerEnrollmentIpc } from './ipc/enrollment'
 import { registerAttendanceIpc } from './ipc/attendance'
 import { registerClassSessionIpc } from './ipc/class-session'
 import { registerTeacherCourseIpc } from './ipc/teacher-course'
+import { registerEvaluationIpc } from './ipc/evaluation'
+import { registerCertificationIpc } from './ipc/certification'
+import { registerCourseProgramIpc } from './ipc/course-program'
 import { connectToDatabase } from './db/connection'
 
 const resolvePath = (path: string): string => fileURLToPath(new URL(path, import.meta.url))
@@ -57,6 +60,9 @@ app.whenReady().then(() => {
   registerAttendanceIpc()
   registerClassSessionIpc()
   registerTeacherCourseIpc()
+  registerEvaluationIpc()
+  registerCertificationIpc()
+  registerCourseProgramIpc()
   createMainWindow()
 
   connectToDatabase()

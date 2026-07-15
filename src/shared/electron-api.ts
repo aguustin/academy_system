@@ -2,13 +2,28 @@ import type { Teacher } from './teachers'
 import type { CourseTemplate, CourseEdition, CourseEditionInput } from './courses'
 import type { Student } from './students'
 import type { Enrollment } from './enrollments'
-import type { Attendance, RegisterAttendanceResult } from './attendance'
+import type {
+  Attendance,
+  AttendanceSummary,
+  ClassAttendanceEntry,
+  ClassAttendanceStudent,
+  RegisterAttendanceResult
+} from './attendance'
 import type { AuthUser, LoginResult } from './auth'
 import type { User } from './users'
 import type { ClassSession, GenerateClassSessionsResult } from './class-sessions'
+import type {
+  Evaluation,
+  EvaluationResultEntry,
+  EvaluationResults,
+  EvaluationType
+} from './evaluations'
 
 export type TeacherInput = Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>
-export type CourseTemplateInput = Omit<CourseTemplate, 'id' | 'createdAt' | 'updatedAt'>
+export type CourseTemplateInput = Omit<
+  CourseTemplate,
+  'id' | 'createdAt' | 'updatedAt' | 'programFile'
+>
 export type EnrollmentInput = Omit<Enrollment, 'id' | 'createdAt'>
 export type StudentInput = Omit<Student, 'id'>
 export type UserListItem = Omit<User, 'password'>
@@ -20,6 +35,11 @@ export type UserUpdateInput = Omit<
 export interface ResetPasswordResult {
   temporaryPassword: string
 }
+export type EvaluationCreateInput = Omit<Evaluation, 'id' | 'createdAt' | 'updatedAt'>
+export type EvaluationUpdateInput = Omit<
+  Evaluation,
+  'id' | 'courseEditionId' | 'createdAt' | 'updatedAt'
+>
 export interface TeacherCourseSummary {
   courseEdition: CourseEdition
   courseTemplate: CourseTemplate | null
@@ -32,6 +52,21 @@ export interface TeacherCourseDetail {
   teacher: Teacher | null
   students: Student[]
   classSessions: ClassSession[]
+}
+export type CertificationEvaluationStatus = 'approved' | 'failed' | 'pending'
+export interface StudentCertificationEvaluation {
+  id: string
+  name: string
+  type: EvaluationType
+  status: CertificationEvaluationStatus
+}
+export interface StudentCertification {
+  student: Student
+  attendancePercentage: number
+  attendanceApproved: boolean
+  evaluationApproved: boolean
+  eligibleForCertificate: boolean
+  evaluations: StudentCertificationEvaluation[]
 }
 
 export interface ElectronApi {
@@ -90,6 +125,12 @@ export interface ElectronApi {
     findByCourseEdition: (courseEditionId: string) => Promise<Attendance[]>
     findByStudent: (studentId: string) => Promise<Attendance[]>
     list: (courseEditionId: string, date: Date) => Promise<Attendance[]>
+    saveClassAttendance: (
+      classSessionId: string,
+      entries: ClassAttendanceEntry[]
+    ) => Promise<ClassAttendanceStudent[]>
+    listByClass: (classSessionId: string) => Promise<ClassAttendanceStudent[]>
+    getSummary: (courseEditionId: string) => Promise<AttendanceSummary>
   }
   classSession: {
     generate: (courseEditionId: string) => Promise<GenerateClassSessionsResult>
@@ -98,5 +139,27 @@ export interface ElectronApi {
   teacherCourse: {
     listMyCourses: () => Promise<TeacherCourseSummary[]>
     getDetail: (courseEditionId: string) => Promise<TeacherCourseDetail>
+  }
+  evaluation: {
+    create: (data: EvaluationCreateInput) => Promise<Evaluation>
+    update: (id: string, data: EvaluationUpdateInput) => Promise<Evaluation | null>
+    delete: (id: string) => Promise<void>
+    list: (courseEditionId: string) => Promise<Evaluation[]>
+    saveResults: (
+      evaluationId: string,
+      results: EvaluationResultEntry[]
+    ) => Promise<EvaluationResults>
+    getResults: (evaluationId: string) => Promise<EvaluationResults>
+  }
+  certification: {
+    getStudentCertification: (
+      courseEditionId: string,
+      studentId: string
+    ) => Promise<StudentCertification>
+  }
+  courseProgram: {
+    upload: (courseTemplateId: string) => Promise<CourseTemplate>
+    open: (courseTemplateId: string) => Promise<void>
+    remove: (courseTemplateId: string) => Promise<CourseTemplate>
   }
 }

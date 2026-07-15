@@ -64,7 +64,16 @@ const api: ElectronApi = {
     findByStudent: (studentId) =>
       ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_FIND_BY_STUDENT, studentId),
     list: (courseEditionId, date) =>
-      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_LIST, { courseEditionId, date })
+      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_LIST, { courseEditionId, date }),
+    saveClassAttendance: (classSessionId, entries) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_SAVE_CLASS_ATTENDANCE, {
+        classSessionId,
+        entries
+      }),
+    listByClass: (classSessionId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_LIST_BY_CLASS, classSessionId),
+    getSummary: (courseEditionId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_GET_SUMMARY, courseEditionId)
   },
   classSession: {
     generate: (courseEditionId) =>
@@ -76,6 +85,31 @@ const api: ElectronApi = {
     listMyCourses: () => ipcRenderer.invoke(IPC_CHANNELS.TEACHER_COURSE_LIST_MY_COURSES),
     getDetail: (courseEditionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.TEACHER_COURSE_GET_DETAIL, courseEditionId)
+  },
+  evaluation: {
+    create: (data) => ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_CREATE, data),
+    update: (id, data) => ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_UPDATE, id, data),
+    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_DELETE, id),
+    list: (courseEditionId) => ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_LIST, courseEditionId),
+    saveResults: (evaluationId, results) =>
+      ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_SAVE_RESULTS, { evaluationId, results }),
+    getResults: (evaluationId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_GET_RESULTS, evaluationId)
+  },
+  certification: {
+    getStudentCertification: (courseEditionId, studentId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CERTIFICATION_GET_STUDENT_CERTIFICATION, {
+        courseEditionId,
+        studentId
+      })
+  },
+  courseProgram: {
+    upload: (courseTemplateId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.COURSE_PROGRAM_UPLOAD, courseTemplateId),
+    open: (courseTemplateId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.COURSE_PROGRAM_OPEN, courseTemplateId),
+    remove: (courseTemplateId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.COURSE_PROGRAM_REMOVE, courseTemplateId)
   }
 }
 
