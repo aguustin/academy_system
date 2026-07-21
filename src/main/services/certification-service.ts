@@ -6,6 +6,11 @@ import { getCourseDetail } from './teacher-course-service'
 import { getAttendanceSummary } from './attendance-service'
 import { getEvaluationResults, listEvaluations } from './evaluation-service'
 
+function round(value: number, decimals: number): number {
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
 export async function getStudentCertification(
   courseEditionId: string,
   studentId: string
@@ -37,20 +42,41 @@ export async function getStudentCertification(
           : result?.status === 'failed'
             ? 'failed'
             : 'pending'
-      return { id: evaluation.id, name: evaluation.name, type: evaluation.type, status }
+      return {
+        id: evaluation.id,
+        name: evaluation.name,
+        type: evaluation.type,
+        grade: result?.grade ?? null,
+        status
+      }
     })
   )
 
-  const evaluationApproved =
-    evaluationDetails.length > 0 &&
-    evaluationDetails.every((evaluation) => evaluation.status === 'approved')
+  const grades = evaluationDetails
+    .map((evaluation) => evaluation.grade)
+    .filter((grade): grade is number => grade !== null)
+
+  const averageGrade =
+    grades.length === 0
+      ? 0
+      : round(grades.reduce((sum, grade) => sum + grade, 0) / grades.length, 2)
+
+  const approvedCount = evaluationDetails.filter(
+    (evaluation) => evaluation.status === 'approved'
+  ).length
+  const approvedWorkPercentage =
+    grades.length === 0 ? 0 : Math.round((approvedCount / grades.length) * 100)
+
+  const workApproved = approvedWorkPercentage >= 70
 
   return {
     student,
     attendancePercentage,
     attendanceApproved,
-    evaluationApproved,
-    eligibleForCertificate: attendanceApproved && evaluationApproved,
+    averageGrade,
+    approvedWorkPercentage,
+    workApproved,
+    eligibleForCertificate: attendanceApproved && workApproved,
     evaluations: evaluationDetails
   }
 }

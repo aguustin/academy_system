@@ -6,7 +6,9 @@ import type { AttendanceSummary, ClassAttendanceStudent } from '../../shared/att
 import type { ClassSession } from '../../shared/class-sessions'
 import type { DayOfWeek } from '../../shared/courses'
 import {
+  evaluationGradeSchema,
   evaluationSchema,
+  evaluationStatusFromGrade,
   evaluationTypeSchema,
   type Evaluation,
   type EvaluationResultStatus,
@@ -17,6 +19,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Select } from './ui/select'
 import { Card } from './ui/card'
+import { Badge } from './ui/badge'
 import { EmptyState } from './ui/empty-state'
 import { FormField } from './ui/form-field'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
@@ -41,6 +44,22 @@ const RESULT_STATUS_LABELS: Record<EvaluationResultStatus, string> = {
   'not-evaluated': 'Sin evaluar',
   passed: 'Aprobado',
   failed: 'Desaprobado'
+}
+
+const RESULT_STATUS_VARIANT: Record<
+  EvaluationResultStatus,
+  'success' | 'destructive' | 'secondary'
+> = {
+  'not-evaluated': 'secondary',
+  passed: 'success',
+  failed: 'destructive'
+}
+
+function gradeFieldError(grade: number | null): string | null {
+  if (grade === null) return null
+  return evaluationGradeSchema.safeParse(grade).success
+    ? null
+    : 'La nota debe ser un número entero entre 1 y 10'
 }
 
 function formatDate(date: Date): string {
@@ -169,6 +188,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   const [results, setResults] = useState<EvaluationResultStudent[] | null>(null)
   const [savingResults, setSavingResults] = useState(false)
   const [resultsSavedMessage, setResultsSavedMessage] = useState<string | null>(null)
+  const [resultsError, setResultsError] = useState<string | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -248,28 +268,40 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
 
   async function openResults(evaluation: Evaluation): Promise<void> {
     setResultsSavedMessage(null)
+    setResultsError(null)
     setResults(null)
     setEvaluationMode({ type: 'results', evaluation })
     const data = await window.api.evaluation.getResults(evaluation.id)
     setResults(data.students)
   }
 
-  function setResultStatus(studentId: string, status: EvaluationResultStatus): void {
+  function setResultGrade(studentId: string, rawValue: string): void {
+    setResultsSavedMessage(null)
     setResults(
       (current) =>
-        current?.map((student) =>
-          student.studentId === studentId ? { ...student, status } : student
-        ) ?? null
+        current?.map((student) => {
+          if (student.studentId !== studentId) return student
+          const grade = rawValue === '' ? null : Number(rawValue)
+          return { ...student, grade, status: evaluationStatusFromGrade(grade) }
+        }) ?? null
     )
   }
 
   async function handleSaveResults(): Promise<void> {
     if (evaluationMode.type !== 'results' || !results) return
+
+    const hasInvalidGrade = results.some((student) => gradeFieldError(student.grade) !== null)
+    if (hasInvalidGrade) {
+      setResultsError('Corregí las notas inválidas antes de guardar.')
+      return
+    }
+
+    setResultsError(null)
     setSavingResults(true)
     try {
       const entries = results
-        .filter((student) => student.status !== 'not-evaluated')
-        .map((student) => ({ studentId: student.studentId, passed: student.status === 'passed' }))
+        .filter((student) => student.grade !== null)
+        .map((student) => ({ studentId: student.studentId, grade: student.grade as number }))
       const data = await window.api.evaluation.saveResults(evaluationMode.evaluation.id, entries)
       setResults(data.students)
       setResultsSavedMessage('Resultados guardados correctamente.')
@@ -615,33 +647,40 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                 <TableHeader>
                   <TableRow>
                     <TableHead>Alumno</TableHead>
+                    <TableHead>Nota</TableHead>
                     <TableHead>Estado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {results.map((student) => (
-                    <TableRow key={student.studentId}>
-                      <TableCell className="font-medium">
-                        {student.firstName} {student.lastName}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-center gap-4">
-                          {(['not-evaluated', 'passed', 'failed'] as const).map((status) => (
-                            <label key={status} className="flex items-center gap-1.5 text-sm">
-                              <input
-                                type="radio"
-                                name={`result-${student.studentId}`}
-                                checked={student.status === status}
-                                onChange={() => setResultStatus(student.studentId, status)}
-                                className="accent-primary"
-                              />
-                              {RESULT_STATUS_LABELS[status]}
-                            </label>
-                          ))}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {results.map((student) => {
+                    const error = gradeFieldError(student.grade)
+                    return (
+                      <TableRow key={student.studentId}>
+                        <TableCell className="font-medium">
+                          {student.firstName} {student.lastName}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={student.grade ?? ''}
+                            onChange={(event) =>
+                              setResultGrade(student.studentId, event.target.value)
+                            }
+                            className="w-20"
+                          />
+                          {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={RESULT_STATUS_VARIANT[student.status]}>
+                            {RESULT_STATUS_LABELS[student.status]}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -653,6 +692,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               >
                 Guardar resultados
               </Button>
+              {resultsError && <p className="text-sm text-destructive">{resultsError}</p>}
               {resultsSavedMessage && <p className="text-sm text-success">{resultsSavedMessage}</p>}
             </div>
           </div>

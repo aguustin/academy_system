@@ -3,6 +3,7 @@ import type { CertificationEvaluationStatus, StudentCertification } from '../../
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Card } from './ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 
 const EVALUATION_STATUS_LABELS: Record<CertificationEvaluationStatus, string> = {
   approved: 'Aprobada',
@@ -42,8 +43,15 @@ export function StudentDetail({
     return <p className="text-sm text-muted-foreground">Cargando...</p>
   }
 
-  const { student, attendancePercentage, attendanceApproved, eligibleForCertificate, evaluations } =
-    certification
+  const {
+    student,
+    attendancePercentage,
+    attendanceApproved,
+    averageGrade,
+    approvedWorkPercentage,
+    eligibleForCertificate,
+    evaluations
+  } = certification
 
   return (
     <div className="space-y-6">
@@ -69,24 +77,59 @@ export function StudentDetail({
         </div>
       </Card>
 
-      <Card className="space-y-3 p-6">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">Evaluaciones</h2>
+      <Card className="space-y-4 p-6">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Calificaciones</h2>
         {evaluations.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No hay evaluaciones cargadas para esta edición.
           </p>
         ) : (
-          <ul className="divide-y divide-border">
-            {evaluations.map((evaluation) => (
-              <li key={evaluation.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="text-foreground">{evaluation.name}</span>
-                <Badge variant={EVALUATION_STATUS_VARIANT[evaluation.status]}>
-                  {EVALUATION_STATUS_LABELS[evaluation.status]}
-                </Badge>
-              </li>
-            ))}
-          </ul>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Evaluación</TableHead>
+                <TableHead>Nota</TableHead>
+                <TableHead>Estado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {evaluations.map((evaluation) => (
+                <TableRow key={evaluation.id}>
+                  <TableCell className="font-medium">{evaluation.name}</TableCell>
+                  <TableCell>{evaluation.grade ?? '—'}</TableCell>
+                  <TableCell>
+                    <Badge variant={EVALUATION_STATUS_VARIANT[evaluation.status]}>
+                      {EVALUATION_STATUS_LABELS[evaluation.status]}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
+
+        <div className="grid grid-cols-2 gap-4 border-t border-border pt-4 sm:grid-cols-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Promedio de notas</p>
+            <p className="text-lg font-semibold text-foreground">{averageGrade}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Trabajos aprobados</p>
+            <p className="text-lg font-semibold text-foreground">{approvedWorkPercentage}%</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Asistencia</p>
+            <p className="text-lg font-semibold text-foreground">{attendancePercentage}%</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Resultado final</p>
+            <p
+              className={`text-lg font-semibold ${eligibleForCertificate ? 'text-success' : 'text-destructive'}`}
+            >
+              {eligibleForCertificate ? 'APTO' : 'NO APTO'}
+            </p>
+          </div>
+        </div>
       </Card>
 
       <Card

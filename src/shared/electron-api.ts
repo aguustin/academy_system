@@ -58,13 +58,16 @@ export interface StudentCertificationEvaluation {
   id: string
   name: string
   type: EvaluationType
+  grade: number | null
   status: CertificationEvaluationStatus
 }
 export interface StudentCertification {
   student: Student
   attendancePercentage: number
   attendanceApproved: boolean
-  evaluationApproved: boolean
+  averageGrade: number
+  approvedWorkPercentage: number
+  workApproved: boolean
   eligibleForCertificate: boolean
   evaluations: StudentCertificationEvaluation[]
 }

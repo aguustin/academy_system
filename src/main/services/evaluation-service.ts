@@ -1,8 +1,9 @@
-import type {
-  Evaluation,
-  EvaluationResultEntry,
-  EvaluationResults,
-  EvaluationResultStudent
+import {
+  evaluationStatusFromGrade,
+  type Evaluation,
+  type EvaluationResultEntry,
+  type EvaluationResults,
+  type EvaluationResultStudent
 } from '../../shared/evaluations'
 import type { EvaluationCreateInput, EvaluationUpdateInput } from '../../shared/electron-api'
 import type { CourseEdition } from '../../shared/courses'
@@ -123,11 +124,13 @@ export async function getEvaluationResults(evaluationId: string): Promise<Evalua
     const student = await mongoStudentProvider.findById(enrollment.studentId)
     if (!student) continue
     const result = resultByStudent.get(student.id)
+    const grade = result?.grade ?? null
     students.push({
       studentId: student.id,
       firstName: student.firstName,
       lastName: student.lastName,
-      status: !result ? 'not-evaluated' : result.passed ? 'passed' : 'failed'
+      grade,
+      status: evaluationStatusFromGrade(grade)
     })
   }
 
@@ -152,7 +155,7 @@ export async function saveEvaluationResults(
     results.map((result) => ({
       evaluationId,
       studentId: result.studentId,
-      passed: result.passed
+      grade: result.grade
     }))
   )
 

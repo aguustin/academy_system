@@ -67,7 +67,7 @@ const studentEvaluationSchema = new Schema<StudentEvaluationDocument>(
   {
     evaluationId: { type: String, required: true },
     studentId: { type: String, required: true },
-    passed: { type: Boolean, required: true },
+    grade: { type: Number, required: true },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true }
   },
@@ -82,8 +82,8 @@ const StudentEvaluationModel = model<StudentEvaluationDocument>(
 )
 
 function toStudentEvaluation(doc: HydratedDocument<StudentEvaluationDocument>): StudentEvaluation {
-  const { _id, evaluationId, studentId, passed, createdAt, updatedAt } = doc
-  return { id: _id.toString(), evaluationId, studentId, passed, createdAt, updatedAt }
+  const { _id, evaluationId, studentId, grade, createdAt, updatedAt } = doc
+  return { id: _id.toString(), evaluationId, studentId, grade, createdAt, updatedAt }
 }
 
 export async function findStudentEvaluation(
@@ -102,7 +102,7 @@ export async function listStudentEvaluations(evaluationId: string): Promise<Stud
 export interface SaveStudentEvaluationInput {
   evaluationId: string
   studentId: string
-  passed: boolean
+  grade: number
 }
 
 export async function saveStudentEvaluations(entries: SaveStudentEvaluationInput[]): Promise<void> {
@@ -111,14 +111,14 @@ export async function saveStudentEvaluations(entries: SaveStudentEvaluationInput
     const existing = await findStudentEvaluation(entry.evaluationId, entry.studentId)
     if (existing) {
       await StudentEvaluationModel.findByIdAndUpdate(existing.id, {
-        passed: entry.passed,
+        grade: entry.grade,
         updatedAt: now
       })
     } else {
       await StudentEvaluationModel.create({
         evaluationId: entry.evaluationId,
         studentId: entry.studentId,
-        passed: entry.passed,
+        grade: entry.grade,
         createdAt: now,
         updatedAt: now
       })

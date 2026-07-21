@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { evaluationTypeSchema } from '../../shared/evaluations'
+import { evaluationGradeSchema, evaluationTypeSchema } from '../../shared/evaluations'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import {
   createEvaluation,
@@ -26,7 +26,7 @@ const saveResultsInputSchema = z.object({
   results: z.array(
     z.object({
       studentId: z.string(),
-      passed: z.boolean()
+      grade: evaluationGradeSchema
     })
   )
 })
