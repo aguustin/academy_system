@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ClipboardList } from 'lucide-react'
-import type { Attendance, AttendanceRegisteredBy, AttendanceStatus } from '../../shared/attendance'
+import type { Attendance, AttendanceStatus } from '../../shared/attendance'
 import type { CourseEdition, CourseTemplate } from '../../shared/courses'
 import type { Student } from '../../shared/students'
+import type { Teacher } from '../../shared/teachers'
 import { Input } from '../components/ui/input'
 import { Select } from '../components/ui/select'
 import { Badge } from '../components/ui/badge'
@@ -30,11 +31,6 @@ const STATUS_BADGE_VARIANT: Record<AttendanceStatus, 'success' | 'destructive' |
   justified: 'secondary'
 }
 
-const REGISTERED_BY_LABELS: Record<AttendanceRegisteredBy, string> = {
-  system: 'Sistema',
-  teacher: 'Docente'
-}
-
 function parseLocalDate(value: string): Date {
   const [year, month, day] = value.split('-').map(Number)
   return new Date(year, month - 1, day)
@@ -44,6 +40,7 @@ export function AttendanceQuery(): React.JSX.Element {
   const [courseEditions, setCourseEditions] = useState<CourseEdition[]>([])
   const [courseTemplates, setCourseTemplates] = useState<CourseTemplate[]>([])
   const [students, setStudents] = useState<Student[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
   const [courseEditionId, setCourseEditionId] = useState('')
   const [date, setDate] = useState('')
   const [attendances, setAttendances] = useState<Attendance[] | null>(null)
@@ -52,6 +49,7 @@ export function AttendanceQuery(): React.JSX.Element {
     window.api.courseEdition.list().then(setCourseEditions)
     window.api.courseTemplate.list().then(setCourseTemplates)
     window.api.student.list().then(setStudents)
+    window.api.teacher.list().then(setTeachers)
   }, [])
 
   useEffect(() => {
@@ -68,6 +66,17 @@ export function AttendanceQuery(): React.JSX.Element {
     return student
       ? { name: `${student.firstName} ${student.lastName}`, dni: student.dni }
       : { name: studentId, dni: '—' }
+  }
+
+  function registeredByLabel(attendance: Attendance): string {
+    if (attendance.registeredBy === 'system') return 'Sistema'
+    const courseEdition = courseEditions.find(
+      (candidate) => candidate.id === attendance.courseEditionId
+    )
+    const teacher = courseEdition
+      ? teachers.find((candidate) => candidate.id === courseEdition.teacherId)
+      : undefined
+    return teacher ? `${teacher.firstName} ${teacher.lastName}` : 'Docente'
   }
 
   return (
@@ -146,7 +155,7 @@ export function AttendanceQuery(): React.JSX.Element {
                       {STATUS_LABELS[attendance.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell>{REGISTERED_BY_LABELS[attendance.registeredBy]}</TableCell>
+                  <TableCell>{registeredByLabel(attendance)}</TableCell>
                 </TableRow>
               )
             })}

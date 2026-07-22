@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  BarChart3,
+  // BarChart3,
   BookOpen,
   CalendarCheck,
   CalendarRange,
   ClipboardList,
   GraduationCap,
-  LayoutDashboard,
+  //LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
   UserCog,
@@ -24,7 +24,7 @@ export function Sidebar(): React.JSX.Element {
     user?.role === 'teacher'
       ? [{ label: 'Mis Cursos', icon: BookOpen, to: '/mis-cursos' }]
       : [
-          { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
+          //{ label: 'Dashboard', icon: LayoutDashboard, to: '/' },
           { label: 'Profesores', icon: Users, to: '/profesores' },
           { label: 'Catálogo de Cursos', icon: BookOpen, to: '/cursos' },
           { label: 'Ediciones', icon: CalendarRange, to: '/ediciones' },
@@ -35,8 +35,8 @@ export function Sidebar(): React.JSX.Element {
                 { label: 'Usuarios', icon: UserCog, to: '/usuarios' },
                 { label: 'Alumnos', icon: GraduationCap, to: '/alumnos' }
               ]
-            : []),
-          { label: 'Reportes', icon: BarChart3 }
+            : [])
+          // { label: 'Reportes', icon: BarChart3 }
         ]
 
   return (
