@@ -7,7 +7,9 @@ const studentSchema = new Schema<StudentDocument>(
   {
     dni: { type: String, required: true, unique: true },
     firstName: { type: String, required: true },
-    lastName: { type: String, required: true }
+    lastName: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: Number, required: true }
   },
   { collection: 'alumnos' }
 )
@@ -15,8 +17,8 @@ const studentSchema = new Schema<StudentDocument>(
 const StudentModel = model<StudentDocument>('Student', studentSchema)
 
 function toStudent(doc: HydratedDocument<StudentDocument>): Student {
-  const { _id, dni, firstName, lastName } = doc
-  return { id: _id.toString(), dni, firstName, lastName }
+  const { _id, dni, firstName, lastName, email, phone } = doc
+  return { id: _id.toString(), dni, firstName, lastName, email, phone }
 }
 
 export async function createStudent(data: StudentDocument): Promise<Student> {

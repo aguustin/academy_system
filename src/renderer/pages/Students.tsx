@@ -93,6 +93,8 @@ export function Students(): React.JSX.Element {
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>DNI</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Teléfono</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -103,6 +105,8 @@ export function Students(): React.JSX.Element {
                   {student.firstName} {student.lastName}
                 </TableCell>
                 <TableCell>{student.dni}</TableCell>
+                <TableCell>{student.email}</TableCell>
+                <TableCell>{student.phone}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button

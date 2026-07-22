@@ -23,7 +23,9 @@ export function StudentForm({
   const [values, setValues] = useState<StudentFormValues>({
     dni: initialValues?.dni ?? '',
     firstName: initialValues?.firstName ?? '',
-    lastName: initialValues?.lastName ?? ''
+    lastName: initialValues?.lastName ?? '',
+    email: initialValues?.email ?? '',
+    phone: initialValues?.phone ?? 0
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -76,6 +78,24 @@ export function StudentForm({
             id="lastName"
             value={values.lastName}
             onChange={(event) => setValues({ ...values, lastName: event.target.value })}
+          />
+        </FormField>
+
+        <FormField label="Email" htmlFor="email" error={errors.email}>
+          <Input
+            id="email"
+            type="email"
+            value={values.email}
+            onChange={(event) => setValues({ ...values, email: event.target.value })}
+          />
+        </FormField>
+
+        <FormField label="Teléfono" htmlFor="phone" error={errors.phone}>
+          <Input
+            id="phone"
+            type="number"
+            value={values.phone || ''}
+            onChange={(event) => setValues({ ...values, phone: Number(event.target.value) })}
           />
         </FormField>
 
