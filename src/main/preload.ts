@@ -94,7 +94,12 @@ const api: ElectronApi = {
     saveResults: (evaluationId, results) =>
       ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_SAVE_RESULTS, { evaluationId, results }),
     getResults: (evaluationId) =>
-      ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_GET_RESULTS, evaluationId)
+      ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_GET_RESULTS, evaluationId),
+    uploadPdf: (evaluationId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_UPLOAD_PDF, evaluationId),
+    openPdf: (evaluationId) => ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_OPEN_PDF, evaluationId),
+    removePdf: (evaluationId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.EVALUATION_REMOVE_PDF, evaluationId)
   },
   certification: {
     getStudentCertification: (courseEditionId, studentId) =>

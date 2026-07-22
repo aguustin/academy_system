@@ -12,6 +12,7 @@ const evaluationSchema = new Schema<EvaluationDocument>(
     courseEditionId: { type: String, required: true },
     type: { type: String, enum: evaluationTypeSchema.options, required: true },
     name: { type: String, required: true },
+    pdfPath: { type: String, required: false },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true }
   },
@@ -23,8 +24,8 @@ evaluationSchema.index({ courseEditionId: 1 })
 const EvaluationModel = model<EvaluationDocument>('Evaluation', evaluationSchema)
 
 function toEvaluation(doc: HydratedDocument<EvaluationDocument>): Evaluation {
-  const { _id, courseEditionId, type, name, createdAt, updatedAt } = doc
-  return { id: _id.toString(), courseEditionId, type, name, createdAt, updatedAt }
+  const { _id, courseEditionId, type, name, pdfPath, createdAt, updatedAt } = doc
+  return { id: _id.toString(), courseEditionId, type, name, pdfPath, createdAt, updatedAt }
 }
 
 type CreateEvaluationInput = Omit<EvaluationDocument, 'createdAt' | 'updatedAt'>
@@ -45,15 +46,26 @@ export async function listEvaluationsByEdition(courseEditionId: string): Promise
   return docs.map(toEvaluation)
 }
 
+type UpdateEvaluationInput = Partial<Omit<CreateEvaluationInput, 'pdfPath'>> & {
+  pdfPath?: string | null
+}
+
 export async function updateEvaluation(
   id: string,
-  data: Partial<CreateEvaluationInput>
+  data: UpdateEvaluationInput
 ): Promise<Evaluation | null> {
-  const doc = await EvaluationModel.findByIdAndUpdate(
-    id,
-    { ...data, updatedAt: new Date() },
-    { new: true }
-  )
+  const { pdfPath, ...rest } = data
+  const update: Partial<EvaluationDocument> & { $unset?: { pdfPath: '' } } = {
+    ...rest,
+    updatedAt: new Date()
+  }
+  if (pdfPath === null) {
+    update.$unset = { pdfPath: '' }
+  } else if (pdfPath !== undefined) {
+    update.pdfPath = pdfPath
+  }
+
+  const doc = await EvaluationModel.findByIdAndUpdate(id, update, { new: true })
   return doc ? toEvaluation(doc) : null
 }
 

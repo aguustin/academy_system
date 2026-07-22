@@ -20,6 +20,9 @@ import {
   saveStudentEvaluations as saveStudentEvaluationsInDb,
   updateEvaluation as updateEvaluationInDb
 } from '../db/evaluation'
+import { openStoredFile, pickAndStoreFile, removeStoredFile } from './file-storage'
+
+const EVALUATION_PDF_FOLDER = 'evaluation-pdfs'
 
 async function resolveOwnedCourseEdition(courseEditionId: string): Promise<CourseEdition> {
   const courseEdition = await findCourseEditionById(courseEditionId)
@@ -160,4 +163,46 @@ export async function saveEvaluationResults(
   )
 
   return getEvaluationResults(evaluationId)
+}
+
+export async function uploadEvaluationPdf(evaluationId: string): Promise<Evaluation> {
+  const { evaluation } = await resolveOwnedEvaluation(evaluationId)
+
+  const fileName = await pickAndStoreFile(EVALUATION_PDF_FOLDER, ['pdf'], 'Archivo PDF')
+  if (!fileName) {
+    return evaluation
+  }
+
+  if (evaluation.pdfPath) {
+    await removeStoredFile(EVALUATION_PDF_FOLDER, evaluation.pdfPath)
+  }
+
+  const updated = await updateEvaluationInDb(evaluationId, { pdfPath: fileName })
+  if (!updated) {
+    throw new Error('Evaluación no encontrada')
+  }
+  return updated
+}
+
+export async function openEvaluationPdf(evaluationId: string): Promise<void> {
+  const { evaluation } = await resolveOwnedEvaluation(evaluationId)
+  if (!evaluation.pdfPath) {
+    throw new Error('Esta evaluación no tiene un archivo adjunto')
+  }
+
+  await openStoredFile(EVALUATION_PDF_FOLDER, evaluation.pdfPath)
+}
+
+export async function removeEvaluationPdf(evaluationId: string): Promise<Evaluation> {
+  const { evaluation } = await resolveOwnedEvaluation(evaluationId)
+
+  if (evaluation.pdfPath) {
+    await removeStoredFile(EVALUATION_PDF_FOLDER, evaluation.pdfPath)
+  }
+
+  const updated = await updateEvaluationInDb(evaluationId, { pdfPath: null })
+  if (!updated) {
+    throw new Error('Evaluación no encontrada')
+  }
+  return updated
 }

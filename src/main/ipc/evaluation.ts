@@ -6,8 +6,11 @@ import {
   deleteEvaluation,
   getEvaluationResults,
   listEvaluations,
+  openEvaluationPdf,
+  removeEvaluationPdf,
   saveEvaluationResults,
-  updateEvaluation
+  updateEvaluation,
+  uploadEvaluationPdf
 } from '../services/evaluation-service'
 import { handleAuthenticated } from '../auth/require-session'
 
@@ -55,5 +58,17 @@ export function registerEvaluationIpc(): void {
 
   handleAuthenticated(IPC_CHANNELS.EVALUATION_GET_RESULTS, (_event, evaluationId: unknown) => {
     return getEvaluationResults(idSchema.parse(evaluationId))
+  })
+
+  handleAuthenticated(IPC_CHANNELS.EVALUATION_UPLOAD_PDF, (_event, evaluationId: unknown) => {
+    return uploadEvaluationPdf(idSchema.parse(evaluationId))
+  })
+
+  handleAuthenticated(IPC_CHANNELS.EVALUATION_OPEN_PDF, (_event, evaluationId: unknown) => {
+    return openEvaluationPdf(idSchema.parse(evaluationId))
+  })
+
+  handleAuthenticated(IPC_CHANNELS.EVALUATION_REMOVE_PDF, (_event, evaluationId: unknown) => {
+    return removeEvaluationPdf(idSchema.parse(evaluationId))
   })
 }

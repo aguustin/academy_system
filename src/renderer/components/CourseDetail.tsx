@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { z } from 'zod'
-import { CalendarCheck, ClipboardCheck, Users } from 'lucide-react'
+import { CalendarCheck, ClipboardCheck, FileText, Users } from 'lucide-react'
 import type { TeacherCourseDetail } from '../../shared/electron-api'
 import type { AttendanceSummary, ClassAttendanceStudent } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
@@ -24,6 +24,7 @@ import { EmptyState } from './ui/empty-state'
 import { FormField } from './ui/form-field'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { StudentDetail } from './StudentDetail'
+import { stripTimestampPrefix } from '../lib/utils'
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
   monday: 'Lunes',
@@ -67,10 +68,7 @@ function formatDate(date: Date): string {
 }
 
 type AttendanceMode =
-  | { type: 'closed' }
-  | { type: 'select-class' }
-  | { type: 'marking'; classSession: ClassSession }
-  | { type: 'summary' }
+  { type: 'closed' } | { type: 'marking'; classSession: ClassSession } | { type: 'summary' }
 
 type EvaluationMode =
   | { type: 'closed' }
@@ -82,6 +80,7 @@ type EvaluationMode =
 const evaluationFormSchema = evaluationSchema.omit({
   id: true,
   courseEditionId: true,
+  pdfPath: true,
   createdAt: true,
   updatedAt: true
 })
@@ -91,12 +90,14 @@ interface EvaluationFormProps {
   initialValues?: Evaluation
   onSubmit: (values: EvaluationFormValues) => Promise<void>
   onCancel: () => void
+  onPdfChange?: (evaluation: Evaluation) => void
 }
 
 function EvaluationForm({
   initialValues,
   onSubmit,
-  onCancel
+  onCancel,
+  onPdfChange
 }: EvaluationFormProps): React.JSX.Element {
   const [values, setValues] = useState<EvaluationFormValues>({
     name: initialValues?.name ?? '',
@@ -104,6 +105,8 @@ function EvaluationForm({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [pdfWorking, setPdfWorking] = useState(false)
+  const [pdfError, setPdfError] = useState<string | null>(null)
 
   async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault()
@@ -128,6 +131,35 @@ function EvaluationForm({
       })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleSelectPdf(): Promise<void> {
+    if (!initialValues) return
+    setPdfError(null)
+    setPdfWorking(true)
+    try {
+      const updated = await window.api.evaluation.uploadPdf(initialValues.id)
+      onPdfChange?.(updated)
+    } catch (error) {
+      setPdfError(error instanceof Error ? error.message : 'No se pudo adjuntar el archivo.')
+    } finally {
+      setPdfWorking(false)
+    }
+  }
+
+  async function handleRemovePdf(): Promise<void> {
+    if (!initialValues) return
+    if (!window.confirm('¿Eliminar el archivo PDF de esta evaluación?')) return
+    setPdfError(null)
+    setPdfWorking(true)
+    try {
+      const updated = await window.api.evaluation.removePdf(initialValues.id)
+      onPdfChange?.(updated)
+    } catch (error) {
+      setPdfError(error instanceof Error ? error.message : 'No se pudo eliminar el archivo.')
+    } finally {
+      setPdfWorking(false)
     }
   }
 
@@ -157,6 +189,57 @@ function EvaluationForm({
             ))}
           </Select>
         </FormField>
+
+        {initialValues && (
+          <div className="space-y-2">
+            <span className="text-sm font-medium text-foreground">Archivo PDF</span>
+            <div className="flex items-center gap-2 text-sm">
+              <FileText className="size-4 shrink-0 text-muted-foreground" />
+              {initialValues.pdfPath ? (
+                <span className="text-foreground">
+                  {stripTimestampPrefix(initialValues.pdfPath)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Sin archivo</span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {initialValues.pdfPath ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectPdf}
+                    disabled={pdfWorking}
+                  >
+                    Cambiar archivo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRemovePdf}
+                    disabled={pdfWorking}
+                  >
+                    Eliminar archivo
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectPdf}
+                  disabled={pdfWorking}
+                >
+                  Seleccionar PDF
+                </Button>
+              )}
+            </div>
+            {pdfError && <p className="text-sm text-destructive">{pdfError}</p>}
+          </div>
+        )}
 
         <div className="flex gap-2 pt-1">
           <Button type="submit" disabled={submitting}>
@@ -204,6 +287,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   }
 
   async function openSummary(): Promise<void> {
+    setSavedMessage(null)
     setSummary(null)
     setAttendanceMode({ type: 'summary' })
     const data = await window.api.attendance.getSummary(courseEditionId)
@@ -227,12 +311,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
         studentId: student.studentId,
         present: student.present
       }))
-      const updated = await window.api.attendance.saveClassAttendance(
-        attendanceMode.classSession.id,
-        entries
-      )
-      setRoster(updated)
+      await window.api.attendance.saveClassAttendance(attendanceMode.classSession.id, entries)
       setSavedMessage('Asistencia guardada correctamente.')
+      setAttendanceMode({ type: 'closed' })
     } finally {
       setSaving(false)
     }
@@ -264,6 +345,26 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
     if (!window.confirm('¿Eliminar esta evaluación?')) return
     await window.api.evaluation.delete(id)
     await loadEvaluations()
+  }
+
+  function handleEvaluationPdfChange(updated: Evaluation): void {
+    setEvaluationMode((current) =>
+      current.type === 'edit' && current.evaluation.id === updated.id
+        ? { type: 'edit', evaluation: updated }
+        : current
+    )
+    setEvaluations(
+      (current) =>
+        current?.map((evaluation) => (evaluation.id === updated.id ? updated : evaluation)) ?? null
+    )
+  }
+
+  async function handleOpenEvaluationPdf(evaluationId: string): Promise<void> {
+    try {
+      await window.api.evaluation.openPdf(evaluationId)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'No se pudo abrir el archivo.')
+    }
   }
 
   async function openResults(evaluation: Evaluation): Promise<void> {
@@ -390,109 +491,30 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">Clases</h2>
-          {attendanceMode.type === 'closed' && classSessions.length > 0 && (
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => setAttendanceMode({ type: 'select-class' })}>
-                Marcar asistencias
-              </Button>
-              <Button size="sm" variant="outline" onClick={openSummary}>
-                Ver total de asistencias
-              </Button>
-            </div>
-          )}
-          {attendanceMode.type !== 'closed' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAttendanceMode({ type: 'closed' })}
-            >
-              Cerrar
+          {attendanceMode.type !== 'marking' && classSessions.length > 0 && (
+            <Button size="sm" variant="outline" onClick={openSummary}>
+              Ver total de asistencias
             </Button>
           )}
         </div>
 
-        {classSessions.length === 0 ? (
-          <EmptyState
-            icon={CalendarCheck}
-            title="Todavía no se generaron clases para esta edición"
-          />
-        ) : attendanceMode.type === 'closed' ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Horario</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {classSessions.map((classSession) => (
-                <TableRow key={classSession.id}>
-                  <TableCell className="font-medium">{formatDate(classSession.date)}</TableCell>
-                  <TableCell>
-                    {classSession.startTime} - {classSession.endTime}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : attendanceMode.type === 'select-class' ? (
-          <div className="flex flex-wrap gap-2">
-            {classSessions.map((classSession) => (
+        {savedMessage && <p className="text-sm text-success">{savedMessage}</p>}
+
+        {attendanceMode.type === 'marking' ? (
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {formatDate(attendanceMode.classSession.date)} ·{' '}
+                {attendanceMode.classSession.startTime} - {attendanceMode.classSession.endTime}
+              </p>
               <Button
-                key={classSession.id}
                 variant="outline"
                 size="sm"
-                onClick={() => openClass(classSession)}
+                onClick={() => setAttendanceMode({ type: 'closed' })}
               >
-                {formatDate(classSession.date)} ({classSession.startTime} - {classSession.endTime})
+                Cerrar
               </Button>
-            ))}
-          </div>
-        ) : attendanceMode.type === 'summary' ? (
-          summary === null ? (
-            <p className="text-sm text-muted-foreground">Cargando...</p>
-          ) : summary.students.length === 0 ? (
-            <EmptyState icon={Users} title="No hay alumnos inscriptos todavía" />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Alumno</TableHead>
-                  {summary.students[0].attendance.map((_, index) => (
-                    <TableHead key={index} className="text-center">
-                      Clase {index + 1}
-                    </TableHead>
-                  ))}
-                  <TableHead className="text-center">Total</TableHead>
-                  <TableHead className="text-center">%</TableHead>
-                  <TableHead className="text-center">70%</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {summary.students.map((student) => (
-                  <TableRow key={student.studentId}>
-                    <TableCell className="font-medium">{student.fullName}</TableCell>
-                    {student.attendance.map((entry, index) => (
-                      <TableCell key={index} className="text-center">
-                        {entry.present ? 'P' : 'A'}
-                      </TableCell>
-                    ))}
-                    <TableCell className="text-center">{student.attendanceCount}</TableCell>
-                    <TableCell className="text-center">{student.attendancePercentage}%</TableCell>
-                    <TableCell className="text-center">
-                      {student.meetsAttendanceRequirement ? '✅' : '❌'}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {formatDate(attendanceMode.classSession.date)} ·{' '}
-              {attendanceMode.classSession.startTime} - {attendanceMode.classSession.endTime}
-            </p>
+            </div>
             {roster === null ? (
               <p className="text-sm text-muted-foreground">Cargando...</p>
             ) : roster.length === 0 ? (
@@ -524,12 +546,89 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                 </TableBody>
               </Table>
             )}
-            <div className="flex items-center gap-3">
-              <Button size="sm" onClick={handleSaveAttendance} disabled={saving || roster === null}>
-                Guardar asistencias
+            <Button size="sm" onClick={handleSaveAttendance} disabled={saving || roster === null}>
+              Guardar asistencias
+            </Button>
+          </div>
+        ) : classSessions.length === 0 ? (
+          <EmptyState
+            icon={CalendarCheck}
+            title="Todavía no se generaron clases para esta edición"
+          />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Horario</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {classSessions.map((classSession) => (
+                <TableRow
+                  key={classSession.id}
+                  onClick={() => openClass(classSession)}
+                  className="cursor-pointer"
+                >
+                  <TableCell className="font-medium">{formatDate(classSession.date)}</TableCell>
+                  <TableCell>
+                    {classSession.startTime} - {classSession.endTime}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+
+        {attendanceMode.type === 'summary' && (
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAttendanceMode({ type: 'closed' })}
+              >
+                Cerrar
               </Button>
-              {savedMessage && <p className="text-sm text-success">{savedMessage}</p>}
             </div>
+            {summary === null ? (
+              <p className="text-sm text-muted-foreground">Cargando...</p>
+            ) : summary.students.length === 0 ? (
+              <EmptyState icon={Users} title="No hay alumnos inscriptos todavía" />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Alumno</TableHead>
+                    {summary.students[0].attendance.map((_, index) => (
+                      <TableHead key={index} className="text-center">
+                        Clase {index + 1}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center">Total</TableHead>
+                    <TableHead className="text-center">%</TableHead>
+                    <TableHead className="text-center">70%</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summary.students.map((student) => (
+                    <TableRow key={student.studentId}>
+                      <TableCell className="font-medium">{student.fullName}</TableCell>
+                      {student.attendance.map((entry, index) => (
+                        <TableCell key={index} className="text-center">
+                          {entry.present ? 'P' : 'A'}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center">{student.attendanceCount}</TableCell>
+                      <TableCell className="text-center">{student.attendancePercentage}%</TableCell>
+                      <TableCell className="text-center">
+                        {student.meetsAttendanceRequirement ? '✅' : '❌'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         )}
       </div>
@@ -570,6 +669,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                   <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Tipo</TableHead>
+                    <TableHead>Archivo</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -578,6 +678,19 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                     <TableRow key={evaluation.id}>
                       <TableCell className="font-medium">{evaluation.name}</TableCell>
                       <TableCell>{EVALUATION_TYPE_LABELS[evaluation.type]}</TableCell>
+                      <TableCell>
+                        {evaluation.pdfPath ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEvaluationPdf(evaluation.id)}
+                          >
+                            Abrir PDF
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -623,6 +736,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
             initialValues={evaluationMode.evaluation}
             onSubmit={(values) => handleUpdateEvaluation(evaluationMode.evaluation.id, values)}
             onCancel={() => setEvaluationMode({ type: 'list' })}
+            onPdfChange={handleEvaluationPdfChange}
           />
         )}
 

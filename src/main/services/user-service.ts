@@ -1,10 +1,5 @@
 import type { User } from '../../shared/users'
-import type {
-  ResetPasswordResult,
-  UserCreateInput,
-  UserListItem,
-  UserUpdateInput
-} from '../../shared/electron-api'
+import type { UserCreateInput, UserListItem, UserUpdateInput } from '../../shared/electron-api'
 import {
   createUser as createUserInDb,
   deleteUser as deleteUserInDb,
@@ -28,9 +23,7 @@ function toUserListItem(user: User): UserListItem {
   }
 }
 
-function generateTemporaryPassword(): string {
-  return Math.random().toString(36).slice(-8)
-}
+const RESET_PASSWORD = '123456'
 
 export async function listUsers(): Promise<UserListItem[]> {
   const users = await getUsers()
@@ -70,12 +63,10 @@ export async function deleteUser(id: string): Promise<void> {
   await deleteUserInDb(id)
 }
 
-export async function resetPassword(id: string): Promise<ResetPasswordResult> {
-  const temporaryPassword = generateTemporaryPassword()
-  const password = await hashPassword(temporaryPassword)
+export async function resetPassword(id: string): Promise<void> {
+  const password = await hashPassword(RESET_PASSWORD)
   const updated = await updateUserInDb(id, { password, mustChangePassword: true })
   if (!updated) {
     throw new Error('Usuario no encontrado')
   }
-  return { temporaryPassword }
 }

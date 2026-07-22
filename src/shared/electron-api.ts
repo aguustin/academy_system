@@ -32,13 +32,10 @@ export type UserUpdateInput = Omit<
   User,
   'id' | 'password' | 'mustChangePassword' | 'createdAt' | 'updatedAt'
 >
-export interface ResetPasswordResult {
-  temporaryPassword: string
-}
-export type EvaluationCreateInput = Omit<Evaluation, 'id' | 'createdAt' | 'updatedAt'>
+export type EvaluationCreateInput = Omit<Evaluation, 'id' | 'createdAt' | 'updatedAt' | 'pdfPath'>
 export type EvaluationUpdateInput = Omit<
   Evaluation,
-  'id' | 'courseEditionId' | 'createdAt' | 'updatedAt'
+  'id' | 'courseEditionId' | 'createdAt' | 'updatedAt' | 'pdfPath'
 >
 export interface TeacherCourseSummary {
   courseEdition: CourseEdition
@@ -87,7 +84,7 @@ export interface ElectronApi {
     create: (data: UserCreateInput) => Promise<UserListItem>
     update: (id: string, data: UserUpdateInput) => Promise<UserListItem | null>
     delete: (id: string) => Promise<void>
-    resetPassword: (id: string) => Promise<ResetPasswordResult>
+    resetPassword: (id: string) => Promise<void>
   }
   teacher: {
     create: (data: TeacherInput) => Promise<Teacher>
@@ -153,6 +150,9 @@ export interface ElectronApi {
       results: EvaluationResultEntry[]
     ) => Promise<EvaluationResults>
     getResults: (evaluationId: string) => Promise<EvaluationResults>
+    uploadPdf: (evaluationId: string) => Promise<Evaluation>
+    openPdf: (evaluationId: string) => Promise<void>
+    removePdf: (evaluationId: string) => Promise<Evaluation>
   }
   certification: {
     getStudentCertification: (

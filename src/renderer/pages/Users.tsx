@@ -69,11 +69,8 @@ export function Users(): React.JSX.Element {
 
   async function handleResetPassword(user: UserListItem): Promise<void> {
     if (!window.confirm(`¿Restablecer la contraseña de "${user.username}"?`)) return
-    const { temporaryPassword } = await window.api.user.resetPassword(user.id)
-    window.alert(
-      `Contraseña temporal para "${user.username}": ${temporaryPassword}\n\n` +
-        'Se le pedirá cambiarla en su próximo inicio de sesión.'
-    )
+    await window.api.user.resetPassword(user.id)
+    window.alert('Contraseña restablecida correctamente.')
     await loadUsers()
   }
 

@@ -16,10 +16,7 @@ import {
   TableRow
 } from '../components/ui/table'
 import { CourseTemplateForm } from '../components/CourseTemplateForm'
-
-function programFileName(programFile: string): string {
-  return programFile.replace(/^\d+-/, '')
-}
+import { stripTimestampPrefix } from '../lib/utils'
 
 interface CourseProgramSectionProps {
   courseTemplate: CourseTemplate
@@ -76,7 +73,7 @@ function CourseProgramSection({
         <FileText className="size-4 shrink-0 text-muted-foreground" />
         {courseTemplate.programFile ? (
           <span className="font-medium text-foreground">
-            {programFileName(courseTemplate.programFile)}
+            {stripTimestampPrefix(courseTemplate.programFile)}
           </span>
         ) : (
           <span className="text-muted-foreground">Sin archivo</span>

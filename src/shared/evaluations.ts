@@ -8,6 +8,9 @@ export const evaluationSchema = z.object({
   courseEditionId: z.string(),
   type: evaluationTypeSchema,
   name: z.string(),
+  // Ruta relativa (dentro de userData/evaluation-pdfs) del PDF adjunto. El archivo en si nunca
+  // se guarda en Mongo.
+  pdfPath: z.string().optional(),
   createdAt: z.date(),
   updatedAt: z.date()
 })
