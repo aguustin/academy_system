@@ -2,6 +2,7 @@ import { LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { Badge } from './ui/badge'
+import { ThemeToggle } from './ThemeToggle'
 
 const ROLE_LABELS = {
   admin: 'Administración',
@@ -31,6 +32,7 @@ export function Header(): React.JSX.Element {
           <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>
         </div>
       )}
+      <ThemeToggle />
       <button
         type="button"
         onClick={handleLogout}

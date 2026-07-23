@@ -1,7 +1,15 @@
 import { config } from 'dotenv'
+import { app } from 'electron'
+import path from 'node:path'
 import mongoose from 'mongoose'
 
-config({ quiet: true })
+// En desarrollo, dotenv toma .env desde el directorio del proyecto (comportamiento
+// por defecto). Empaquetada, la app puede arrancar con cualquier working directory,
+// así que se apunta explícitamente al .env embebido junto al ejecutable.
+config({
+  quiet: true,
+  path: app.isPackaged ? path.join(process.resourcesPath, '.env') : undefined
+})
 
 let connectionPromise: Promise<typeof mongoose> | null = null
 

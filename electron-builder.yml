@@ -7,6 +7,9 @@ files:
   - out/**/*
   - package.json
   - node_modules/**/*
+extraResources:
+  - from: .env
+    to: .env
 win:
   target: nsis
 nsis:
