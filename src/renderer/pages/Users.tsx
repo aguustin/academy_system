@@ -120,18 +120,26 @@ export function Users(): React.JSX.Element {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Apellido</TableHead>
               <TableHead>Usuario</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>DNI</TableHead>
+              <TableHead>Teléfono</TableHead>
               <TableHead>Rol</TableHead>
-              <TableHead>Activo</TableHead>
+              <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.username}</TableCell>
+                <TableCell className="font-medium">{user.firstName ?? '—'}</TableCell>
+                <TableCell>{user.lastName ?? '—'}</TableCell>
+                <TableCell>{user.username}</TableCell>
                 <TableCell>{user.email}</TableCell>
+                <TableCell>{user.dni ?? '—'}</TableCell>
+                <TableCell>{user.phone ?? '—'}</TableCell>
                 <TableCell>
                   <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                     {ROLE_LABELS[user.role]}

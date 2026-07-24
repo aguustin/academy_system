@@ -10,7 +10,7 @@ import type {
   RegisterAttendanceResult
 } from './attendance'
 import type { AuthUser, LoginResult } from './auth'
-import type { User } from './users'
+import type { User, UserRole } from './users'
 import type { ClassSession, GenerateClassSessionsResult } from './class-sessions'
 import type {
   Evaluation,
@@ -26,12 +26,37 @@ export type CourseTemplateInput = Omit<
 >
 export type EnrollmentInput = Omit<Enrollment, 'id' | 'createdAt'>
 export type StudentInput = Omit<Student, 'id'>
-export type UserListItem = Omit<User, 'password'>
-export type UserCreateInput = Omit<User, 'id' | 'mustChangePassword' | 'createdAt' | 'updatedAt'>
-export type UserUpdateInput = Omit<
-  User,
-  'id' | 'password' | 'mustChangePassword' | 'createdAt' | 'updatedAt'
->
+// UserListItem/UserCreateInput/UserUpdateInput combinan User con los datos del Teacher
+// vinculado (Ticket 027): la administración de talleristas se unificó en un único formulario,
+// por lo que estos tipos ya no son un simple Omit<User, ...> sino una composición de ambas
+// entidades. Los campos de Teacher son null/opcionales para administradores (no tienen Teacher).
+export interface UserListItem extends Omit<User, 'password'> {
+  firstName: string | null
+  lastName: string | null
+  dni: string | null
+  phone: string | null
+}
+export interface UserCreateInput {
+  username: string
+  email: string
+  password: string
+  role: UserRole
+  active: boolean
+  firstName?: string
+  lastName?: string
+  dni?: string
+  phone?: string
+}
+export interface UserUpdateInput {
+  username: string
+  email: string
+  role: UserRole
+  active: boolean
+  firstName?: string
+  lastName?: string
+  dni?: string
+  phone?: string
+}
 export type EvaluationCreateInput = Omit<Evaluation, 'id' | 'createdAt' | 'updatedAt' | 'pdfPath'>
 export type EvaluationUpdateInput = Omit<
   Evaluation,

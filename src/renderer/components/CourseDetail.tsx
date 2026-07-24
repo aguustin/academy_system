@@ -25,6 +25,7 @@ import { FormField } from './ui/form-field'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { StudentDetail } from './StudentDetail'
 import { stripTimestampPrefix } from '../lib/utils'
+import { useAuth } from '../auth/AuthContext'
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
   monday: 'Lunes',
@@ -260,6 +261,8 @@ interface CourseDetailProps {
 }
 
 export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): React.JSX.Element {
+  const { user } = useAuth()
+  const canManageAttendance = user?.role === 'admin'
   const [detail, setDetail] = useState<TeacherCourseDetail | null>(null)
   const [attendanceMode, setAttendanceMode] = useState<AttendanceMode>({ type: 'closed' })
   const [roster, setRoster] = useState<ClassAttendanceStudent[] | null>(null)
@@ -567,8 +570,8 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               {classSessions.map((classSession) => (
                 <TableRow
                   key={classSession.id}
-                  onClick={() => openClass(classSession)}
-                  className="cursor-pointer"
+                  onClick={canManageAttendance ? () => openClass(classSession) : undefined}
+                  className={canManageAttendance ? 'cursor-pointer' : undefined}
                 >
                   <TableCell className="font-medium">{formatDate(classSession.date)}</TableCell>
                   <TableCell>

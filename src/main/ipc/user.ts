@@ -16,21 +16,34 @@ const userFieldsSchema = z.object({
   username: z.string().min(1),
   email: z.email(),
   role: userRoleSchema,
-  teacherId: z.string().optional(),
-  active: z.boolean()
+  active: z.boolean(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  dni: z.string().optional(),
+  phone: z.string().optional()
 })
+
+function checkTeacherFields(data: z.infer<typeof userFieldsSchema>, ctx: z.RefinementCtx): void {
+  if (data.role !== 'teacher') return
+  if (!data.firstName?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El nombre es obligatorio', path: ['firstName'] })
+  }
+  if (!data.lastName?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El apellido es obligatorio', path: ['lastName'] })
+  }
+  if (!data.dni?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El DNI es obligatorio', path: ['dni'] })
+  }
+  if (!data.phone?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El teléfono es obligatorio', path: ['phone'] })
+  }
+}
 
 const createUserInputSchema = userFieldsSchema
   .extend({ password: z.string().min(6) })
-  .refine((data) => data.role !== 'teacher' || !!data.teacherId, {
-    message: 'Debe seleccionar un profesor',
-    path: ['teacherId']
-  })
+  .superRefine(checkTeacherFields)
 
-const updateUserInputSchema = userFieldsSchema.refine(
-  (data) => data.role !== 'teacher' || !!data.teacherId,
-  { message: 'Debe seleccionar un profesor', path: ['teacherId'] }
-)
+const updateUserInputSchema = userFieldsSchema.superRefine(checkTeacherFields)
 
 export function registerUserIpc(): void {
   handleAdminOnly(IPC_CHANNELS.USER_LIST, () => {

@@ -145,6 +145,11 @@ export async function saveClassAttendance(
   classSessionId: string,
   entries: ClassAttendanceEntry[]
 ): Promise<ClassAttendanceStudent[]> {
+  // Ticket 028: la carga de asistencias pasa a ser responsabilidad exclusiva del administrador.
+  if (getSession()?.role === 'teacher') {
+    throw new Error('No tenés permisos para registrar asistencias')
+  }
+
   const { classSession, courseEdition } = await resolveOwnedClassSession(classSessionId)
 
   const enrollments = await listEnrollmentsByCourseEdition(courseEdition.id)

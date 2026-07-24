@@ -1,8 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { z } from 'zod'
 import { userRoleSchema, type UserRole } from '../../shared/users'
 import type { UserListItem } from '../../shared/electron-api'
-import type { Teacher } from '../../shared/teachers'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Select } from './ui/select'
@@ -16,25 +15,38 @@ const ROLE_LABELS: Record<UserRole, string> = {
 }
 
 const baseFieldsSchema = z.object({
-  username: z.string().min(1, 'Requerido'),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   email: z.email(),
+  dni: z.string().optional(),
+  phone: z.string().optional(),
+  username: z.string().min(1, 'Requerido'),
   role: userRoleSchema,
-  teacherId: z.string().optional(),
   active: z.boolean()
 })
 
+function checkTeacherFields(data: z.infer<typeof baseFieldsSchema>, ctx: z.RefinementCtx): void {
+  if (data.role !== 'teacher') return
+  if (!data.firstName?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El nombre es obligatorio', path: ['firstName'] })
+  }
+  if (!data.lastName?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El apellido es obligatorio', path: ['lastName'] })
+  }
+  if (!data.dni?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El DNI es obligatorio', path: ['dni'] })
+  }
+  if (!data.phone?.trim()) {
+    ctx.addIssue({ code: 'custom', message: 'El teléfono es obligatorio', path: ['phone'] })
+  }
+}
+
 const createFormSchema = baseFieldsSchema
   .extend({ password: z.string().min(6, 'Mínimo 6 caracteres') })
-  .refine((data) => data.role !== 'teacher' || !!data.teacherId, {
-    message: 'Seleccioná un profesor',
-    path: ['teacherId']
-  })
+  .superRefine(checkTeacherFields)
 export type UserCreateFormValues = z.infer<typeof createFormSchema>
 
-const updateFormSchema = baseFieldsSchema.refine(
-  (data) => data.role !== 'teacher' || !!data.teacherId,
-  { message: 'Seleccioná un profesor', path: ['teacherId'] }
-)
+const updateFormSchema = baseFieldsSchema.superRefine(checkTeacherFields)
 export type UserUpdateFormValues = z.infer<typeof updateFormSchema>
 
 interface UserFormProps {
@@ -44,31 +56,22 @@ interface UserFormProps {
 }
 
 export function UserForm({ initialValues, onSubmit, onCancel }: UserFormProps): React.JSX.Element {
-  const [teachers, setTeachers] = useState<Teacher[]>([])
-  const [username, setUsername] = useState(initialValues?.username ?? '')
+  const [firstName, setFirstName] = useState(initialValues?.firstName ?? '')
+  const [lastName, setLastName] = useState(initialValues?.lastName ?? '')
   const [email, setEmail] = useState(initialValues?.email ?? '')
+  const [dni, setDni] = useState(initialValues?.dni ?? '')
+  const [phone, setPhone] = useState(initialValues?.phone ?? '')
+  const [username, setUsername] = useState(initialValues?.username ?? '')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole>(initialValues?.role ?? 'teacher')
-  const [teacherId, setTeacherId] = useState(initialValues?.teacherId ?? '')
   const [active, setActive] = useState(initialValues?.active ?? true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    window.api.teacher.list().then(setTeachers)
-  }, [])
-
-  function handleRoleChange(nextRole: UserRole): void {
-    setRole(nextRole)
-    if (nextRole !== 'teacher') {
-      setTeacherId('')
-    }
-  }
-
   async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault()
 
-    const fields = { username, email, role, teacherId: teacherId || undefined, active }
+    const fields = { firstName, lastName, email, dni, phone, username, role, active }
     const result = initialValues
       ? updateFormSchema.safeParse(fields)
       : createFormSchema.safeParse({ ...fields, password })
@@ -86,6 +89,8 @@ export function UserForm({ initialValues, onSubmit, onCancel }: UserFormProps): 
     setSubmitting(true)
     try {
       await onSubmit(result.data)
+    } catch (error) {
+      setErrors({ dni: error instanceof Error ? error.message : 'No se pudo guardar el usuario.' })
     } finally {
       setSubmitting(false)
     }
@@ -94,11 +99,19 @@ export function UserForm({ initialValues, onSubmit, onCancel }: UserFormProps): 
   return (
     <Card className="max-w-md p-6">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <FormField label="Usuario" htmlFor="username" error={errors.username}>
+        <FormField label="Nombre" htmlFor="firstName" error={errors.firstName}>
           <Input
-            id="username"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            id="firstName"
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+          />
+        </FormField>
+
+        <FormField label="Apellido" htmlFor="lastName" error={errors.lastName}>
+          <Input
+            id="lastName"
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
           />
         </FormField>
 
@@ -108,6 +121,22 @@ export function UserForm({ initialValues, onSubmit, onCancel }: UserFormProps): 
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+          />
+        </FormField>
+
+        <FormField label="DNI" htmlFor="dni" error={errors.dni}>
+          <Input id="dni" value={dni} onChange={(event) => setDni(event.target.value)} />
+        </FormField>
+
+        <FormField label="Teléfono" htmlFor="phone" error={errors.phone}>
+          <Input id="phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
+        </FormField>
+
+        <FormField label="Usuario" htmlFor="username" error={errors.username}>
+          <Input
+            id="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
           />
         </FormField>
 
@@ -126,7 +155,7 @@ export function UserForm({ initialValues, onSubmit, onCancel }: UserFormProps): 
           <Select
             id="role"
             value={role}
-            onChange={(event) => handleRoleChange(event.target.value as UserRole)}
+            onChange={(event) => setRole(event.target.value as UserRole)}
           >
             {userRoleSchema.options.map((option) => (
               <option key={option} value={option}>
@@ -135,23 +164,6 @@ export function UserForm({ initialValues, onSubmit, onCancel }: UserFormProps): 
             ))}
           </Select>
         </FormField>
-
-        {role === 'teacher' && (
-          <FormField label="Profesor" htmlFor="teacherId" error={errors.teacherId}>
-            <Select
-              id="teacherId"
-              value={teacherId}
-              onChange={(event) => setTeacherId(event.target.value)}
-            >
-              <option value="">Seleccionar...</option>
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.firstName} {teacher.lastName}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        )}
 
         <CheckboxField label="Activo" htmlFor="active" checked={active} onChange={setActive} />
 

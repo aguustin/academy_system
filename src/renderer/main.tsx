@@ -7,7 +7,6 @@ import { RequireAuth, RequireChangePassword } from './auth/RequireAuth'
 import { RequireAdmin } from './auth/RequireAdmin'
 import { AppLayout } from './components/AppLayout'
 import { Dashboard } from './pages/Dashboard'
-import { Teachers } from './pages/Teachers'
 import { CourseTemplates } from './pages/CourseTemplates'
 import { CourseEditions } from './pages/CourseEditions'
 import { AttendanceRegistration } from './pages/AttendanceRegistration'
@@ -38,7 +37,6 @@ const router = createHashRouter([
         element: <AppLayout />,
         children: [
           { index: true, element: <Dashboard /> },
-          { path: 'profesores', element: <Teachers /> },
           { path: 'cursos', element: <CourseTemplates /> },
           { path: 'ediciones', element: <CourseEditions /> },
           { path: 'asistencias/registro', element: <AttendanceRegistration /> },

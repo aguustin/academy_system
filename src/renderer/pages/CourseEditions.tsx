@@ -22,9 +22,13 @@ import {
 import { CourseEditionForm } from '../components/CourseEditionForm'
 import { EnrollmentsSection } from '../components/EnrollmentsSection'
 import { ClassSessionsSection } from '../components/ClassSessionsSection'
+import { CourseDetail } from '../components/CourseDetail'
 
 type ViewMode =
-  { type: 'list' } | { type: 'create' } | { type: 'edit'; courseEdition: CourseEdition }
+  | { type: 'list' }
+  | { type: 'create' }
+  | { type: 'edit'; courseEdition: CourseEdition }
+  | { type: 'detail'; courseEdition: CourseEdition }
 
 const STATUS_LABELS: Record<CourseEditionStatus, string> = {
   upcoming: 'Próxima',
@@ -102,6 +106,15 @@ export function CourseEditions(): React.JSX.Element {
     )
   }
 
+  if (mode.type === 'detail') {
+    return (
+      <CourseDetail
+        courseEditionId={mode.courseEdition.id}
+        onBack={() => setMode({ type: 'list' })}
+      />
+    )
+  }
+
   if (mode.type === 'edit') {
     const { courseEdition } = mode
     return (
@@ -166,6 +179,13 @@ export function CourseEditions(): React.JSX.Element {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMode({ type: 'detail', courseEdition })}
+                    >
+                      Ver detalle
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

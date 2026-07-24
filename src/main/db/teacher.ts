@@ -52,6 +52,11 @@ export async function getTeachers(): Promise<Teacher[]> {
   return docs.map(toTeacher)
 }
 
+export async function findTeacherByDni(dni: string): Promise<Teacher | null> {
+  const doc = await TeacherModel.findOne({ dni })
+  return doc ? toTeacher(doc) : null
+}
+
 export async function updateTeacher(
   id: string,
   data: Partial<CreateTeacherInput>

@@ -10,8 +10,7 @@ import {
   //LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
-  UserCog,
-  Users
+  UserCog
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../auth/AuthContext'
@@ -25,7 +24,6 @@ export function Sidebar(): React.JSX.Element {
       ? [{ label: 'Mis Cursos', icon: BookOpen, to: '/mis-cursos' }]
       : [
           //{ label: 'Dashboard', icon: LayoutDashboard, to: '/' },
-          { label: 'Profesores', icon: Users, to: '/profesores' },
           { label: 'Catálogo de Cursos', icon: BookOpen, to: '/cursos' },
           { label: 'Ediciones', icon: CalendarRange, to: '/ediciones' },
           { label: 'Registro de Asistencia', icon: CalendarCheck, to: '/asistencias/registro' },
