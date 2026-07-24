@@ -1,9 +1,11 @@
+import { ipcMain } from 'electron'
 import { z } from 'zod'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import {
+  findStudentTodayClasses,
   getAttendanceSummary,
   listAttendanceByClass,
-  registerAttendance,
+  registerClassAttendance,
   saveClassAttendance
 } from '../services/attendance-service'
 import {
@@ -14,9 +16,9 @@ import {
 import { handleAuthenticated } from '../auth/require-session'
 
 const idSchema = z.string()
-const registerInputSchema = z.object({
-  dni: z.string(),
-  courseEditionId: z.string().optional()
+const registerClassInputSchema = z.object({
+  classSessionId: z.string(),
+  studentId: z.string()
 })
 const listInputSchema = z.object({
   courseEditionId: z.string(),
@@ -33,9 +35,14 @@ const saveClassAttendanceInputSchema = z.object({
 })
 
 export function registerAttendanceIpc(): void {
-  handleAuthenticated(IPC_CHANNELS.ATTENDANCE_REGISTER, (_event, data: unknown) => {
-    const input = registerInputSchema.parse(data)
-    return registerAttendance(input.dni, input.courseEditionId)
+  // Kiosco de autoservicio: se usa sin sesión iniciada (Ticket 025), igual que auth:login.
+  ipcMain.handle(IPC_CHANNELS.ATTENDANCE_FIND_TODAY_CLASSES, (_event, dni: unknown) => {
+    return findStudentTodayClasses(idSchema.parse(dni))
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ATTENDANCE_REGISTER_CLASS, (_event, data: unknown) => {
+    const input = registerClassInputSchema.parse(data)
+    return registerClassAttendance(input.classSessionId, input.studentId)
   })
 
   handleAuthenticated(

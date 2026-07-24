@@ -1,17 +1,19 @@
 import type {
-  AttendanceEditionOption,
   AttendanceStatus,
   AttendanceSummary,
   AttendanceSummaryClassEntry,
   ClassAttendanceEntry,
   ClassAttendanceStudent,
-  RegisterAttendanceResult
+  FindStudentTodayClassesResult,
+  RegisterClassAttendanceResult,
+  StudentTodayClassOption
 } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { CourseEdition } from '../../shared/courses'
 import { mongoStudentProvider } from '../providers/mongo-student-provider'
 import { findCourseEditionById } from '../db/course-edition'
 import { findCourseTemplateById } from '../db/course-template'
+import { findTeacherById } from '../db/teacher'
 import { listEnrollmentsByCourseEdition, listEnrollmentsByStudent } from '../db/enrollment'
 import { findClassSessionById } from '../db/class-session'
 import { listClassSessionsByEdition } from './class-session-service'
@@ -21,70 +23,93 @@ import {
   findAttendanceByClassSession,
   findAttendanceByClassSessionAndStudent,
   findAttendanceByCourseEdition,
-  findAttendanceForToday,
   updateAttendance
 } from '../db/attendance'
 
-function formatTime(date: Date): string {
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+function isSameLocalDate(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
 }
 
-async function findActiveEditions(studentId: string): Promise<AttendanceEditionOption[]> {
-  const enrollments = await listEnrollmentsByStudent(studentId)
-  const options: AttendanceEditionOption[] = []
-
-  for (const enrollment of enrollments) {
-    const edition = await findCourseEditionById(enrollment.courseEditionId)
-    if (!edition || edition.status !== 'active') continue
-
-    const template = await findCourseTemplateById(edition.templateId)
-    options.push({ courseEditionId: edition.id, courseName: template?.name ?? edition.templateId })
-  }
-
-  return options
-}
-
-export async function registerAttendance(
-  dni: string,
-  courseEditionId?: string
-): Promise<RegisterAttendanceResult> {
+export async function findStudentTodayClasses(dni: string): Promise<FindStudentTodayClassesResult> {
   const student = await mongoStudentProvider.findByDni(dni)
   if (!student) {
     return { status: 'student-not-found' }
   }
 
   const studentName = `${student.firstName} ${student.lastName}`
-  const activeEditions = await findActiveEditions(student.id)
+  const today = new Date()
+  const enrollments = await listEnrollmentsByStudent(student.id)
 
-  if (activeEditions.length === 0) {
-    return { status: 'no-active-enrollment', studentName }
-  }
+  const options: StudentTodayClassOption[] = []
+  for (const enrollment of enrollments) {
+    const courseEdition = await findCourseEditionById(enrollment.courseEditionId)
+    if (!courseEdition) continue
 
-  let target = activeEditions[0]
-  if (activeEditions.length > 1) {
-    const chosen = activeEditions.find((option) => option.courseEditionId === courseEditionId)
-    if (!chosen) {
-      return { status: 'select-edition', studentName, options: activeEditions }
+    const classSessions = await listClassSessionsByEdition(courseEdition.id)
+    const todaySessions = classSessions.filter((session) => isSameLocalDate(session.date, today))
+    if (todaySessions.length === 0) continue
+
+    const [courseTemplate, teacher] = await Promise.all([
+      findCourseTemplateById(courseEdition.templateId),
+      findTeacherById(courseEdition.teacherId)
+    ])
+
+    for (const classSession of todaySessions) {
+      options.push({
+        classSessionId: classSession.id,
+        courseEditionId: courseEdition.id,
+        courseName: courseTemplate?.name ?? courseEdition.templateId,
+        teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '—',
+        date: classSession.date,
+        startTime: classSession.startTime,
+        endTime: classSession.endTime
+      })
     }
-    target = chosen
   }
 
-  const existing = await findAttendanceForToday(student.id, target.courseEditionId)
+  if (options.length === 0) {
+    return { status: 'no-classes-today', studentName }
+  }
+
+  return { status: 'ok', studentId: student.id, studentName, options }
+}
+
+export async function registerClassAttendance(
+  classSessionId: string,
+  studentId: string
+): Promise<RegisterClassAttendanceResult> {
+  const classSession = await findClassSessionById(classSessionId)
+  if (!classSession) {
+    throw new Error('Clase no encontrada')
+  }
+
+  // Nunca confiar en los IDs que llegan desde el kiosco: se revalida la inscripción en el backend.
+  const enrollments = await listEnrollmentsByCourseEdition(classSession.courseEditionId)
+  const isEnrolled = enrollments.some((enrollment) => enrollment.studentId === studentId)
+  if (!isEnrolled) {
+    throw new Error('El alumno no está inscripto en esta edición')
+  }
+
+  const existing = await findAttendanceByClassSessionAndStudent(classSessionId, studentId)
   if (existing) {
-    return { status: 'already-registered', studentName, courseName: target.courseName }
+    return { status: 'already-registered' }
   }
 
-  const now = new Date()
   await createAttendance({
-    studentId: student.id,
-    courseEditionId: target.courseEditionId,
-    date: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-    time: formatTime(now),
+    studentId,
+    courseEditionId: classSession.courseEditionId,
+    classSessionId,
+    date: classSession.date,
+    time: classSession.startTime,
     status: 'present',
     registeredBy: 'system'
   })
 
-  return { status: 'registered', studentName, courseName: target.courseName, time: formatTime(now) }
+  return { status: 'registered' }
 }
 
 async function resolveOwnedCourseEdition(courseEditionId: string): Promise<CourseEdition> {

@@ -7,7 +7,8 @@ import type {
   AttendanceSummary,
   ClassAttendanceEntry,
   ClassAttendanceStudent,
-  RegisterAttendanceResult
+  FindStudentTodayClassesResult,
+  RegisterClassAttendanceResult
 } from './attendance'
 import type { AuthUser, LoginResult } from './auth'
 import type { User, UserRole } from './users'
@@ -146,7 +147,11 @@ export interface ElectronApi {
     delete: (id: string) => Promise<void>
   }
   attendance: {
-    register: (dni: string, courseEditionId?: string) => Promise<RegisterAttendanceResult>
+    findTodayClasses: (dni: string) => Promise<FindStudentTodayClassesResult>
+    registerClass: (
+      classSessionId: string,
+      studentId: string
+    ) => Promise<RegisterClassAttendanceResult>
     findByCourseEdition: (courseEditionId: string) => Promise<Attendance[]>
     findByStudent: (studentId: string) => Promise<Attendance[]>
     list: (courseEditionId: string, date: Date) => Promise<Attendance[]>

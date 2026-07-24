@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom'
 import {
   // BarChart3,
   BookOpen,
-  CalendarCheck,
   CalendarRange,
   ClipboardList,
   GraduationCap,
@@ -26,7 +25,6 @@ export function Sidebar(): React.JSX.Element {
           //{ label: 'Dashboard', icon: LayoutDashboard, to: '/' },
           { label: 'Catálogo de Cursos', icon: BookOpen, to: '/cursos' },
           { label: 'Ediciones', icon: CalendarRange, to: '/ediciones' },
-          { label: 'Registro de Asistencia', icon: CalendarCheck, to: '/asistencias/registro' },
           { label: 'Asistencias', icon: ClipboardList, to: '/asistencias' },
           ...(user?.role === 'admin'
             ? [

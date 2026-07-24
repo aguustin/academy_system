@@ -6,7 +6,7 @@ export function Table({
   ...props
 }: HTMLAttributes<HTMLTableElement>): React.JSX.Element {
   return (
-    <div className="w-full overflow-auto rounded-lg border border-border bg-card shadow-sm">
+    <div className="max-h-[500px]! w-full overflow-auto rounded-lg border border-border bg-card shadow-sm">
       <table className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   )

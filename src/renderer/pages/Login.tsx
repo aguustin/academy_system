@@ -15,6 +15,7 @@ const ERROR_MESSAGES = {
 export function Login(): React.JSX.Element {
   const { user, loading, setUser } = useAuth()
   const navigate = useNavigate()
+  const [showForm, setShowForm] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +40,34 @@ export function Login(): React.JSX.Element {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (!showForm) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
+        <Card className="w-full max-w-sm p-8">
+          <div className="mb-6 space-y-1 text-center">
+            <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
+              SA
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight">Sistema Académico</h1>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button className="w-full" onClick={() => setShowForm(true)}>
+              Ingresar
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate('/registrar-asistencia')}
+            >
+              Registrar asistencia
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -81,6 +110,15 @@ export function Login(): React.JSX.Element {
 
           <Button type="submit" disabled={submitting} className="w-full">
             Ingresar
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => setShowForm(false)}
+            disabled={submitting}
+          >
+            Volver
           </Button>
         </form>
       </Card>

@@ -21,6 +21,7 @@ import './index.css'
 
 const router = createHashRouter([
   { path: '/login', element: <Login /> },
+  { path: '/registrar-asistencia', element: <AttendanceRegistration /> },
   {
     path: '/cambiar-contrasena',
     element: (
@@ -39,7 +40,6 @@ const router = createHashRouter([
           { index: true, element: <Dashboard /> },
           { path: 'cursos', element: <CourseTemplates /> },
           { path: 'ediciones', element: <CourseEditions /> },
-          { path: 'asistencias/registro', element: <AttendanceRegistration /> },
           { path: 'asistencias', element: <AttendanceQuery /> },
           { path: 'mis-cursos', element: <TeacherDashboard /> },
           {

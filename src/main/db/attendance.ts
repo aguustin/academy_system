@@ -100,21 +100,6 @@ export async function findAttendanceByClassSessionAndStudent(
   return doc ? toAttendance(doc) : null
 }
 
-export async function findAttendanceForToday(
-  studentId: string,
-  courseEditionId: string
-): Promise<Attendance | null> {
-  const now = new Date()
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
-  const doc = await AttendanceModel.findOne({
-    studentId,
-    courseEditionId,
-    date: { $gte: startOfDay, $lt: endOfDay }
-  })
-  return doc ? toAttendance(doc) : null
-}
-
 export async function updateAttendance(
   id: string,
   data: Partial<CreateAttendanceInput>

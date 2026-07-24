@@ -57,8 +57,9 @@ const api: ElectronApi = {
     delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.ENROLLMENT_DELETE, id)
   },
   attendance: {
-    register: (dni, courseEditionId) =>
-      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_REGISTER, { dni, courseEditionId }),
+    findTodayClasses: (dni) => ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_FIND_TODAY_CLASSES, dni),
+    registerClass: (classSessionId, studentId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_REGISTER_CLASS, { classSessionId, studentId }),
     findByCourseEdition: (courseEditionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_FIND_BY_COURSE_EDITION, courseEditionId),
     findByStudent: (studentId) =>

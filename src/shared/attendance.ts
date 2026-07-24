@@ -11,8 +11,9 @@ export const attendanceSchema = z.object({
   id: z.string(),
   studentId: z.string(),
   courseEditionId: z.string(),
-  // Solo tiene valor para asistencia marcada por clase (Ticket 018); el registro
-  // por DNI no referencia una ClassSession concreta y sigue sin completarlo.
+  // Identifica la clase concreta a la que corresponde la asistencia: tanto el marcado manual
+  // del administrador (Ticket 018) como el autoservicio del kiosco (Ticket 025) lo completan.
+  // Queda opcional únicamente por compatibilidad con registros históricos anteriores.
   classSessionId: z.string().optional(),
   date: z.date(),
   time: timeSchema,
@@ -22,17 +23,23 @@ export const attendanceSchema = z.object({
 })
 export type Attendance = z.infer<typeof attendanceSchema>
 
-export interface AttendanceEditionOption {
+export interface StudentTodayClassOption {
+  classSessionId: string
   courseEditionId: string
   courseName: string
+  teacherName: string
+  date: Date
+  startTime: string
+  endTime: string
 }
 
-export type RegisterAttendanceResult =
-  | { status: 'registered'; studentName: string; courseName: string; time: string }
-  | { status: 'select-edition'; studentName: string; options: AttendanceEditionOption[] }
-  | { status: 'already-registered'; studentName: string; courseName: string }
+export type FindStudentTodayClassesResult =
   | { status: 'student-not-found' }
-  | { status: 'no-active-enrollment'; studentName: string }
+  | { status: 'no-classes-today'; studentName: string }
+  | { status: 'ok'; studentId: string; studentName: string; options: StudentTodayClassOption[] }
+
+export type RegisterClassAttendanceResult =
+  { status: 'registered' } | { status: 'already-registered' }
 
 export interface ClassAttendanceStudent {
   studentId: string
