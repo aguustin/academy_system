@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { timeSchema } from './time'
 
+// Fuente única de verdad para el porcentaje mínimo de asistencia requerido para conservar
+// la regularidad de un curso. Toda la lógica de cálculo (kiosco, resumen, certificación)
+// debe leer este valor en lugar de repetir el número.
+export const MINIMUM_ATTENDANCE_PERCENTAGE = 70
+
 export const attendanceStatusSchema = z.enum(['present', 'absent', 'justified'])
 export type AttendanceStatus = z.infer<typeof attendanceStatusSchema>
 
@@ -38,8 +43,21 @@ export type FindStudentTodayClassesResult =
   | { status: 'no-classes-today'; studentName: string }
   | { status: 'ok'; studentId: string; studentName: string; options: StudentTodayClassOption[] }
 
+export type AttendanceFeedbackType = 'success' | 'warning' | 'failed'
+
+export interface AttendanceFeedback {
+  remainingAbsences: number
+  allowedAbsences: number
+  usedAbsences: number
+  attendancePercentage: number
+  meetsAttendanceRequirement: boolean
+  feedbackMessage: string
+  feedbackType: AttendanceFeedbackType
+}
+
 export type RegisterClassAttendanceResult =
-  { status: 'registered' } | { status: 'already-registered' }
+  | { status: 'registered'; attendanceFeedback: AttendanceFeedback }
+  | { status: 'already-registered' }
 
 export interface ClassAttendanceStudent {
   studentId: string

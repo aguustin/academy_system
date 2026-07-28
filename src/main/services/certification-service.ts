@@ -1,3 +1,4 @@
+import { MINIMUM_ATTENDANCE_PERCENTAGE } from '../../shared/attendance'
 import type {
   StudentCertification,
   StudentCertificationEvaluation
@@ -27,10 +28,12 @@ export async function getStudentCertification(
     listEvaluations(courseEditionId)
   ])
 
-  const attendancePercentage =
-    attendanceSummary.students.find((candidate) => candidate.studentId === studentId)
-      ?.attendancePercentage ?? 0
-  const attendanceApproved = attendancePercentage >= 70
+  const studentAttendance = attendanceSummary.students.find(
+    (candidate) => candidate.studentId === studentId
+  )
+  const attendancePercentage = studentAttendance?.attendancePercentage ?? 0
+  const attendanceCount = studentAttendance?.attendanceCount ?? 0
+  const attendanceApproved = attendancePercentage >= MINIMUM_ATTENDANCE_PERCENTAGE
 
   const evaluationDetails: StudentCertificationEvaluation[] = await Promise.all(
     evaluations.map(async (evaluation) => {
@@ -71,6 +74,8 @@ export async function getStudentCertification(
 
   return {
     student,
+    totalClasses: attendanceSummary.totalClasses,
+    attendanceCount,
     attendancePercentage,
     attendanceApproved,
     averageGrade,

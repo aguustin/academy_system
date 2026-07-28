@@ -2,7 +2,11 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { z } from 'zod'
 import { CalendarCheck, ClipboardCheck, FileText, Users } from 'lucide-react'
 import type { TeacherCourseDetail } from '../../shared/electron-api'
-import type { AttendanceSummary, ClassAttendanceStudent } from '../../shared/attendance'
+import {
+  MINIMUM_ATTENDANCE_PERCENTAGE,
+  type AttendanceSummary,
+  type ClassAttendanceStudent
+} from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { DayOfWeek } from '../../shared/courses'
 import {
@@ -22,10 +26,12 @@ import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { EmptyState } from './ui/empty-state'
 import { FormField } from './ui/form-field'
+import { Pagination } from './ui/pagination'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { StudentDetail } from './StudentDetail'
-import { stripTimestampPrefix } from '../lib/utils'
+import { normalizeText, sortByName, stripTimestampPrefix } from '../lib/utils'
 import { useAuth } from '../auth/AuthContext'
+import { usePagination } from '../hooks/use-pagination'
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
   monday: 'Lunes',
@@ -276,6 +282,8 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   const [resultsSavedMessage, setResultsSavedMessage] = useState<string | null>(null)
   const [resultsError, setResultsError] = useState<string | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [studentSearch, setStudentSearch] = useState('')
+  const evaluationsPagination = usePagination(evaluations ?? [])
 
   useEffect(() => {
     window.api.teacherCourse.getDetail(courseEditionId).then(setDetail)
@@ -414,6 +422,12 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
     }
   }
 
+  const sortedStudents = sortByName(detail?.students ?? [])
+  const filteredStudents = sortedStudents.filter((student) =>
+    normalizeText(student.lastName).includes(normalizeText(studentSearch.trim()))
+  )
+  const studentsPagination = usePagination(filteredStudents)
+
   if (detail === null) {
     return <p className="text-sm text-muted-foreground">Cargando...</p>
   }
@@ -428,7 +442,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
     )
   }
 
-  const { courseEdition, courseTemplate, teacher, students, classSessions } = detail
+  const { courseEdition, courseTemplate, teacher, classSessions } = detail
 
   return (
     <div className="space-y-8">
@@ -457,37 +471,52 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
 
       <div className="space-y-3">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Alumnos inscriptos</h2>
-        {students.length === 0 ? (
+        {sortedStudents.length === 0 ? (
           <EmptyState icon={Users} title="No hay alumnos inscriptos todavía" />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Alumno</TableHead>
-                <TableHead>DNI</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">
-                    {student.firstName} {student.lastName}
-                  </TableCell>
-                  <TableCell>{student.dni}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedStudentId(student.id)}
-                    >
-                      Ver detalle
-                    </Button>
-                  </TableCell>
+          <>
+            <Input
+              placeholder="Buscar por apellido..."
+              value={studentSearch}
+              onChange={(event) => setStudentSearch(event.target.value)}
+              className="max-w-sm"
+            />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Alumno</TableHead>
+                  <TableHead>DNI</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {studentsPagination.pageItems.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">
+                      {student.lastName} {student.firstName}
+                    </TableCell>
+                    <TableCell>{student.dni}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedStudentId(student.id)}
+                      >
+                        Ver detalle
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <Pagination
+              page={studentsPagination.page}
+              totalPages={studentsPagination.totalPages}
+              pageSize={studentsPagination.pageSize}
+              onPageChange={studentsPagination.setPage}
+              onPageSizeChange={studentsPagination.setPageSize}
+            />
+          </>
         )}
       </div>
 
@@ -531,10 +560,10 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {roster.map((student) => (
+                  {sortByName(roster).map((student) => (
                     <TableRow key={student.studentId}>
                       <TableCell className="font-medium">
-                        {student.firstName} {student.lastName}
+                        {student.lastName} {student.firstName}
                       </TableCell>
                       <TableCell>
                         <input
@@ -610,7 +639,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                     ))}
                     <TableHead className="text-center">Total</TableHead>
                     <TableHead className="text-center">%</TableHead>
-                    <TableHead className="text-center">70%</TableHead>
+                    <TableHead className="text-center">{MINIMUM_ATTENDANCE_PERCENTAGE}%</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -667,62 +696,71 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                 title="Todavía no hay evaluaciones para esta edición"
               />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Archivo</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {evaluations.map((evaluation) => (
-                    <TableRow key={evaluation.id}>
-                      <TableCell className="font-medium">{evaluation.name}</TableCell>
-                      <TableCell>{EVALUATION_TYPE_LABELS[evaluation.type]}</TableCell>
-                      <TableCell>
-                        {evaluation.pdfPath ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenEvaluationPdf(evaluation.id)}
-                          >
-                            Abrir PDF
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openResults(evaluation)}
-                          >
-                            Registrar resultados
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEvaluationMode({ type: 'edit', evaluation })}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteEvaluation(evaluation.id)}
-                          >
-                            Eliminar
-                          </Button>
-                        </div>
-                      </TableCell>
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Archivo</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {evaluationsPagination.pageItems.map((evaluation) => (
+                      <TableRow key={evaluation.id}>
+                        <TableCell className="font-medium">{evaluation.name}</TableCell>
+                        <TableCell>{EVALUATION_TYPE_LABELS[evaluation.type]}</TableCell>
+                        <TableCell>
+                          {evaluation.pdfPath ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenEvaluationPdf(evaluation.id)}
+                            >
+                              Abrir PDF
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openResults(evaluation)}
+                            >
+                              Registrar resultados
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEvaluationMode({ type: 'edit', evaluation })}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteEvaluation(evaluation.id)}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <Pagination
+                  page={evaluationsPagination.page}
+                  totalPages={evaluationsPagination.totalPages}
+                  pageSize={evaluationsPagination.pageSize}
+                  onPageChange={evaluationsPagination.setPage}
+                  onPageSizeChange={evaluationsPagination.setPageSize}
+                />
+              </>
             )}
           </div>
         )}
@@ -774,7 +812,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                     return (
                       <TableRow key={student.studentId}>
                         <TableCell className="font-medium">
-                          {student.firstName} {student.lastName}
+                          {student.lastName} {student.firstName}
                         </TableCell>
                         <TableCell>
                           <Input

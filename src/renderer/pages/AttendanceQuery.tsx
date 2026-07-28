@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
 import { FormField } from '../components/ui/form-field'
+import { Pagination } from '../components/ui/pagination'
 import {
   Table,
   TableBody,
@@ -18,6 +19,7 @@ import {
   TableHeader,
   TableRow
 } from '../components/ui/table'
+import { usePagination } from '../hooks/use-pagination'
 
 const STATUS_LABELS: Record<AttendanceStatus, string> = {
   present: 'Presente',
@@ -57,6 +59,8 @@ export function AttendanceQuery(): React.JSX.Element {
     window.api.attendance.list(courseEditionId, parseLocalDate(date)).then(setAttendances)
   }, [courseEditionId, date])
 
+  const pagination = usePagination(attendances ?? [])
+
   function templateName(templateId: string): string {
     return courseTemplates.find((template) => template.id === templateId)?.name ?? templateId
   }
@@ -64,7 +68,7 @@ export function AttendanceQuery(): React.JSX.Element {
   function studentInfo(studentId: string): { name: string; dni: string } {
     const student = students.find((candidate) => candidate.id === studentId)
     return student
-      ? { name: `${student.firstName} ${student.lastName}`, dni: student.dni }
+      ? { name: `${student.lastName} ${student.firstName}`, dni: student.dni }
       : { name: studentId, dni: '—' }
   }
 
@@ -132,35 +136,44 @@ export function AttendanceQuery(): React.JSX.Element {
           description="No se encontraron registros para esa edición y fecha."
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Alumno</TableHead>
-              <TableHead>DNI</TableHead>
-              <TableHead>Hora</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Registrado por</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {attendances.map((attendance) => {
-              const info = studentInfo(attendance.studentId)
-              return (
-                <TableRow key={attendance.id}>
-                  <TableCell className="font-medium">{info.name}</TableCell>
-                  <TableCell>{info.dni}</TableCell>
-                  <TableCell>{attendance.time}</TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_BADGE_VARIANT[attendance.status]}>
-                      {STATUS_LABELS[attendance.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{registeredByLabel(attendance)}</TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Alumno</TableHead>
+                <TableHead>DNI</TableHead>
+                <TableHead>Hora</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Registrado por</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pagination.pageItems.map((attendance) => {
+                const info = studentInfo(attendance.studentId)
+                return (
+                  <TableRow key={attendance.id}>
+                    <TableCell className="font-medium">{info.name}</TableCell>
+                    <TableCell>{info.dni}</TableCell>
+                    <TableCell>{attendance.time}</TableCell>
+                    <TableCell>
+                      <Badge variant={STATUS_BADGE_VARIANT[attendance.status]}>
+                        {STATUS_LABELS[attendance.status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{registeredByLabel(attendance)}</TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </div>
       )}
     </div>
   )

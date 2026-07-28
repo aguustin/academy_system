@@ -48,7 +48,8 @@ const api: ElectronApi = {
     findByDni: (dni) => ipcRenderer.invoke(IPC_CHANNELS.STUDENT_FIND_BY_DNI, dni),
     create: (data) => ipcRenderer.invoke(IPC_CHANNELS.STUDENT_CREATE, data),
     update: (id, data) => ipcRenderer.invoke(IPC_CHANNELS.STUDENT_UPDATE, id, data),
-    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.STUDENT_DELETE, id)
+    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.STUDENT_DELETE, id),
+    importFromExcel: () => ipcRenderer.invoke(IPC_CHANNELS.STUDENT_IMPORT_FROM_EXCEL)
   },
   enrollment: {
     create: (data) => ipcRenderer.invoke(IPC_CHANNELS.ENROLLMENT_CREATE, data),

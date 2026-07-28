@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { GraduationCap } from 'lucide-react'
 import type { Student } from '../../shared/students'
-import type { StudentInput } from '../../shared/electron-api'
+import type { ImportStudentsResult, StudentInput } from '../../shared/electron-api'
 import { Button } from '../components/ui/button'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
+import { Card } from '../components/ui/card'
+import { Pagination } from '../components/ui/pagination'
 import {
   Table,
   TableBody,
@@ -14,21 +16,28 @@ import {
   TableRow
 } from '../components/ui/table'
 import { StudentForm } from '../components/StudentForm'
+import { usePagination } from '../hooks/use-pagination'
+import { sortByName } from '../lib/utils'
 
 type ViewMode = { type: 'list' } | { type: 'create' } | { type: 'edit'; student: Student }
 
 export function Students(): React.JSX.Element {
   const [students, setStudents] = useState<Student[] | null>(null)
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<ImportStudentsResult | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
 
   const loadStudents = useCallback(async () => {
     const data = await window.api.student.list()
-    setStudents(data)
+    setStudents(sortByName(data))
   }, [])
 
   useEffect(() => {
-    window.api.student.list().then(setStudents)
+    window.api.student.list().then((data) => setStudents(sortByName(data)))
   }, [])
+
+  const pagination = usePagination(students ?? [])
 
   async function handleCreate(values: StudentInput): Promise<void> {
     await window.api.student.create(values)
@@ -46,6 +55,23 @@ export function Students(): React.JSX.Element {
     if (!window.confirm('¿Eliminar este alumno?')) return
     await window.api.student.delete(id)
     await loadStudents()
+  }
+
+  async function handleImport(): Promise<void> {
+    setImportError(null)
+    setImportResult(null)
+    setImporting(true)
+    try {
+      const result = await window.api.student.importFromExcel()
+      if (result) {
+        setImportResult(result)
+        await loadStudents()
+      }
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'No se pudo importar el archivo')
+    } finally {
+      setImporting(false)
+    }
   }
 
   if (mode.type === 'create') {
@@ -75,8 +101,28 @@ export function Students(): React.JSX.Element {
     <div className="space-y-6">
       <PageHeader
         title="Alumnos"
-        action={<Button onClick={() => setMode({ type: 'create' })}>Crear alumno</Button>}
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleImport} disabled={importing}>
+              {importing ? 'Importando...' : 'Importar alumnos'}
+            </Button>
+            <Button onClick={() => setMode({ type: 'create' })}>Crear alumno</Button>
+          </div>
+        }
       />
+
+      {importError && (
+        <Card className="border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          {importError}
+        </Card>
+      )}
+
+      {importResult && (
+        <Card className="p-4 text-sm">
+          Importados: {importResult.imported} / Duplicados: {importResult.duplicates} / Inválidos:{' '}
+          {importResult.invalid}
+        </Card>
+      )}
 
       {students === null ? (
         <p className="text-sm text-muted-foreground">Cargando...</p>
@@ -88,47 +134,56 @@ export function Students(): React.JSX.Element {
           action={<Button onClick={() => setMode({ type: 'create' })}>Crear alumno</Button>}
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>DNI</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Teléfono</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {students.map((student) => (
-              <TableRow key={student.id}>
-                <TableCell className="font-medium">
-                  {student.firstName} {student.lastName}
-                </TableCell>
-                <TableCell>{student.dni}</TableCell>
-                <TableCell>{student.email}</TableCell>
-                <TableCell>{student.phone}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setMode({ type: 'edit', student })}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(student.id)}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </TableCell>
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>DNI</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pagination.pageItems.map((student) => (
+                <TableRow key={student.id}>
+                  <TableCell className="font-medium">
+                    {student.lastName} {student.firstName}
+                  </TableCell>
+                  <TableCell>{student.dni}</TableCell>
+                  <TableCell>{student.email}</TableCell>
+                  <TableCell>{student.phone}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMode({ type: 'edit', student })}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(student.id)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </div>
       )}
     </div>
   )

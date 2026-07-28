@@ -27,6 +27,11 @@ export type CourseTemplateInput = Omit<
 >
 export type EnrollmentInput = Omit<Enrollment, 'id' | 'createdAt'>
 export type StudentInput = Omit<Student, 'id'>
+export interface ImportStudentsResult {
+  imported: number
+  duplicates: number
+  invalid: number
+}
 // UserListItem/UserCreateInput/UserUpdateInput combinan User con los datos del Teacher
 // vinculado (Ticket 027): la administración de talleristas se unificó en un único formulario,
 // por lo que estos tipos ya no son un simple Omit<User, ...> sino una composición de ambas
@@ -86,6 +91,8 @@ export interface StudentCertificationEvaluation {
 }
 export interface StudentCertification {
   student: Student
+  totalClasses: number
+  attendanceCount: number
   attendancePercentage: number
   attendanceApproved: boolean
   averageGrade: number
@@ -140,6 +147,7 @@ export interface ElectronApi {
     create: (data: StudentInput) => Promise<Student>
     update: (id: string, data: StudentInput) => Promise<Student | null>
     delete: (id: string) => Promise<void>
+    importFromExcel: () => Promise<ImportStudentsResult | null>
   }
   enrollment: {
     create: (data: EnrollmentInput) => Promise<Enrollment>

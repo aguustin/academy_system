@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { StudentTodayClassOption } from '../../shared/attendance'
+import type { AttendanceFeedback, StudentTodayClassOption } from '../../shared/attendance'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card } from '../components/ui/card'
@@ -13,12 +13,8 @@ type KioskStep =
   | { type: 'not-found' }
   | { type: 'no-classes'; studentName: string }
   | { type: 'options'; studentId: string; studentName: string; options: StudentTodayClassOption[] }
-  | { type: 'confirmed'; option: StudentTodayClassOption }
+  | { type: 'confirmed'; feedback: AttendanceFeedback }
   | { type: 'already-registered'; option: StudentTodayClassOption }
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('es-AR')
-}
 
 export function AttendanceRegistration(): React.JSX.Element {
   const navigate = useNavigate()
@@ -70,7 +66,7 @@ export function AttendanceRegistration(): React.JSX.Element {
       const result = await window.api.attendance.registerClass(option.classSessionId, studentId)
       setStep(
         result.status === 'registered'
-          ? { type: 'confirmed', option }
+          ? { type: 'confirmed', feedback: result.attendanceFeedback }
           : { type: 'already-registered', option }
       )
     } finally {
@@ -164,14 +160,10 @@ export function AttendanceRegistration(): React.JSX.Element {
       )}
 
       {step.type === 'confirmed' && (
-        <Card className="w-full max-w-sm space-y-2 p-8 text-center">
-          <p className="text-3xl text-success">✓</p>
-          <p className="font-semibold text-foreground">Asistencia registrada correctamente</p>
-          <p className="text-sm text-muted-foreground">Curso: {step.option.courseName}</p>
-          <p className="text-sm text-muted-foreground">Fecha: {formatDate(step.option.date)}</p>
-          <p className="text-sm text-muted-foreground">
-            Horario: {step.option.startTime} - {step.option.endTime}
-          </p>
+        <Card className="w-full max-w-sm space-y-3 p-8 text-center">
+          <p className="text-4xl text-success">✔</p>
+          <p className="text-lg font-semibold text-foreground">Asistencia registrada</p>
+          <p className="text-sm text-muted-foreground">{step.feedback.feedbackMessage}</p>
         </Card>
       )}
 

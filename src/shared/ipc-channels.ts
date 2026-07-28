@@ -30,6 +30,7 @@ export const IPC_CHANNELS = {
   STUDENT_CREATE: 'student:create',
   STUDENT_UPDATE: 'student:update',
   STUDENT_DELETE: 'student:delete',
+  STUDENT_IMPORT_FROM_EXCEL: 'student:importFromExcel',
   ENROLLMENT_CREATE: 'enrollment:create',
   ENROLLMENT_LIST_BY_COURSE_EDITION: 'enrollment:listByCourseEdition',
   ENROLLMENT_DELETE: 'enrollment:delete',

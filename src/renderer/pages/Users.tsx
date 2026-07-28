@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
+import { Pagination } from '../components/ui/pagination'
 import {
   Table,
   TableBody,
@@ -19,6 +20,7 @@ import {
   type UserCreateFormValues,
   type UserUpdateFormValues
 } from '../components/UserForm'
+import { usePagination } from '../hooks/use-pagination'
 
 type ViewMode = { type: 'list' } | { type: 'create' } | { type: 'edit'; user: UserListItem }
 
@@ -40,6 +42,8 @@ export function Users(): React.JSX.Element {
   useEffect(() => {
     window.api.user.list().then(setUsers)
   }, [])
+
+  const pagination = usePagination(users ?? [])
 
   async function handleCreate(values: UserCreateFormValues): Promise<void> {
     await window.api.user.create(values)
@@ -117,65 +121,74 @@ export function Users(): React.JSX.Element {
           action={<Button onClick={() => setMode({ type: 'create' })}>Crear usuario</Button>}
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Apellido</TableHead>
-              <TableHead>Usuario</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>DNI</TableHead>
-              <TableHead>Teléfono</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.firstName ?? '—'}</TableCell>
-                <TableCell>{user.lastName ?? '—'}</TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.dni ?? '—'}</TableCell>
-                <TableCell>{user.phone ?? '—'}</TableCell>
-                <TableCell>
-                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                    {ROLE_LABELS[user.role]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={user.active ? 'success' : 'secondary'}>
-                    {user.active ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setMode({ type: 'edit', user })}
-                    >
-                      Editar
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleResetPassword(user)}>
-                      Restablecer contraseña
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(user)}
-                      disabled={user.id === currentUser?.id}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </TableCell>
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Apellido</TableHead>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>DNI</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pagination.pageItems.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.firstName ?? '—'}</TableCell>
+                  <TableCell>{user.lastName ?? '—'}</TableCell>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.dni ?? '—'}</TableCell>
+                  <TableCell>{user.phone ?? '—'}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                      {ROLE_LABELS[user.role]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={user.active ? 'success' : 'secondary'}>
+                      {user.active ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMode({ type: 'edit', user })}
+                      >
+                        Editar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleResetPassword(user)}>
+                        Restablecer contraseña
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(user)}
+                        disabled={user.id === currentUser?.id}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </div>
       )}
     </div>
   )

@@ -2,7 +2,12 @@ import { z } from 'zod'
 import { studentSchema } from '../../shared/students'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { mongoStudentProvider } from '../providers/mongo-student-provider'
-import { createStudent, deleteStudent, updateStudent } from '../services/student-service'
+import {
+  createStudent,
+  deleteStudent,
+  importStudentsFromExcel,
+  updateStudent
+} from '../services/student-service'
 import { handleAuthenticated } from '../auth/require-session'
 import { handleAdminOnly } from '../auth/require-admin'
 
@@ -32,5 +37,9 @@ export function registerStudentIpc(): void {
 
   handleAdminOnly(IPC_CHANNELS.STUDENT_DELETE, (_event, id: unknown) => {
     return deleteStudent(idSchema.parse(id))
+  })
+
+  handleAdminOnly(IPC_CHANNELS.STUDENT_IMPORT_FROM_EXCEL, () => {
+    return importStudentsFromExcel()
   })
 }

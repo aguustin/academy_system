@@ -1,12 +1,16 @@
-import type {
-  AttendanceStatus,
-  AttendanceSummary,
-  AttendanceSummaryClassEntry,
-  ClassAttendanceEntry,
-  ClassAttendanceStudent,
-  FindStudentTodayClassesResult,
-  RegisterClassAttendanceResult,
-  StudentTodayClassOption
+import {
+  MINIMUM_ATTENDANCE_PERCENTAGE,
+  type Attendance,
+  type AttendanceFeedback,
+  type AttendanceFeedbackType,
+  type AttendanceStatus,
+  type AttendanceSummary,
+  type AttendanceSummaryClassEntry,
+  type ClassAttendanceEntry,
+  type ClassAttendanceStudent,
+  type FindStudentTodayClassesResult,
+  type RegisterClassAttendanceResult,
+  type StudentTodayClassOption
 } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { CourseEdition } from '../../shared/courses'
@@ -32,6 +36,99 @@ function isSameLocalDate(a: Date, b: Date): boolean {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   )
+}
+
+function toLocalDateOnly(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+export interface AttendanceStats {
+  totalClasses: number
+  completedClasses: number
+  attendanceCount: number
+  allowedAbsences: number
+  usedAbsences: number
+  remainingAbsences: number
+  attendancePercentage: number
+  meetsAttendanceRequirement: boolean
+}
+
+// Núcleo de cálculo reutilizable: recibe datos ya obtenidos (sin volver a consultar Mongo) para
+// poder reutilizarse tanto para un único alumno (kiosco) como en el resumen de toda la edición.
+function computeAttendanceStats(
+  classSessions: ClassSession[],
+  attendanceRecords: Attendance[],
+  studentId: string,
+  today: Date = new Date()
+): AttendanceStats {
+  const totalClasses = classSessions.length
+  const todayLocal = toLocalDateOnly(today)
+  const completedClasses = classSessions.filter(
+    (session) => toLocalDateOnly(session.date) <= todayLocal
+  ).length
+
+  const attendanceCount = attendanceRecords.filter(
+    (record) => record.studentId === studentId && record.status === 'present'
+  ).length
+
+  const allowedAbsences = Math.floor(totalClasses * (1 - MINIMUM_ATTENDANCE_PERCENTAGE / 100))
+  const usedAbsences = Math.max(0, completedClasses - attendanceCount)
+  const remainingAbsences = Math.max(0, allowedAbsences - usedAbsences)
+  const attendancePercentage =
+    totalClasses === 0 ? 0 : Math.round((attendanceCount / totalClasses) * 100)
+
+  return {
+    totalClasses,
+    completedClasses,
+    attendanceCount,
+    allowedAbsences,
+    usedAbsences,
+    remainingAbsences,
+    attendancePercentage,
+    meetsAttendanceRequirement: attendancePercentage >= MINIMUM_ATTENDANCE_PERCENTAGE
+  }
+}
+
+// Reutilizable por certificaciones y reportes: calcula las estadísticas de asistencia de un
+// alumno en una edición sin necesidad de conocer cómo se obtienen las clases o los registros.
+export async function getStudentAttendanceStats(
+  courseEditionId: string,
+  studentId: string
+): Promise<AttendanceStats> {
+  const [classSessions, attendanceRecords] = await Promise.all([
+    listClassSessionsByEdition(courseEditionId),
+    findAttendanceByCourseEdition(courseEditionId)
+  ])
+  return computeAttendanceStats(classSessions, attendanceRecords, studentId)
+}
+
+function buildAttendanceFeedback(stats: AttendanceStats): AttendanceFeedback {
+  let feedbackType: AttendanceFeedbackType
+  let feedbackMessage: string
+
+  if (!stats.meetsAttendanceRequirement) {
+    feedbackType = 'failed'
+    feedbackMessage =
+      'Ya no cumplís con el porcentaje mínimo de asistencia requerido. Por favor hablá con el administrador para revisar tu situación.'
+  } else if (stats.remainingAbsences === 0) {
+    feedbackType = 'warning'
+    feedbackMessage =
+      'A partir de este momento ya no tenés más faltas disponibles. Cualquier nueva ausencia hará que pierdas la condición de asistencia.'
+  } else {
+    feedbackType = 'success'
+    const classWord = stats.remainingAbsences === 1 ? 'clase' : 'clases'
+    feedbackMessage = `Todavía podés faltar ${stats.remainingAbsences} ${classWord} sin perder la regularidad.`
+  }
+
+  return {
+    remainingAbsences: stats.remainingAbsences,
+    allowedAbsences: stats.allowedAbsences,
+    usedAbsences: stats.usedAbsences,
+    attendancePercentage: stats.attendancePercentage,
+    meetsAttendanceRequirement: stats.meetsAttendanceRequirement,
+    feedbackMessage,
+    feedbackType
+  }
 }
 
 export async function findStudentTodayClasses(dni: string): Promise<FindStudentTodayClassesResult> {
@@ -109,7 +206,8 @@ export async function registerClassAttendance(
     registeredBy: 'system'
   })
 
-  return { status: 'registered' }
+  const stats = await getStudentAttendanceStats(classSession.courseEditionId, studentId)
+  return { status: 'registered', attendanceFeedback: buildAttendanceFeedback(stats) }
 }
 
 async function resolveOwnedCourseEdition(courseEditionId: string): Promise<CourseEdition> {
@@ -237,17 +335,15 @@ export async function getAttendanceSummary(courseEditionId: string): Promise<Att
           present: byClass?.get(classSession.id) === 'present'
         }))
 
-        const attendanceCount = attendance.filter((entry) => entry.present).length
-        const attendancePercentage =
-          totalClasses === 0 ? 0 : Math.round((attendanceCount / totalClasses) * 100)
+        const stats = computeAttendanceStats(classSessions, attendanceRecords, student.id)
 
         return {
           studentId: student.id,
           firstName: student.firstName,
           lastName: student.lastName,
-          attendanceCount,
-          attendancePercentage,
-          meetsAttendanceRequirement: attendancePercentage >= 70,
+          attendanceCount: stats.attendanceCount,
+          attendancePercentage: stats.attendancePercentage,
+          meetsAttendanceRequirement: stats.meetsAttendanceRequirement,
           attendance
         }
       })

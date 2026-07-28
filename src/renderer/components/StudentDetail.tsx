@@ -45,6 +45,8 @@ export function StudentDetail({
 
   const {
     student,
+    totalClasses,
+    attendanceCount,
     attendancePercentage,
     attendanceApproved,
     averageGrade,
@@ -75,6 +77,8 @@ export function StudentDetail({
             {attendanceApproved ? 'Cumple asistencia' : 'No cumple asistencia'}
           </Badge>
         </div>
+        <p className="text-sm text-muted-foreground">Clases del curso: {totalClasses}</p>
+        <p className="text-sm text-muted-foreground">Asistencias registradas: {attendanceCount}</p>
       </Card>
 
       <Card className="space-y-4 p-6">

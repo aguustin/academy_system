@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge'
 import { Card } from '../components/ui/card'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
+import { Pagination } from '../components/ui/pagination'
 import {
   Table,
   TableBody,
@@ -17,6 +18,7 @@ import {
 } from '../components/ui/table'
 import { CourseTemplateForm } from '../components/CourseTemplateForm'
 import { stripTimestampPrefix } from '../lib/utils'
+import { usePagination } from '../hooks/use-pagination'
 
 interface CourseProgramSectionProps {
   courseTemplate: CourseTemplate
@@ -119,6 +121,8 @@ export function CourseTemplates(): React.JSX.Element {
     window.api.courseTemplate.list().then(setCourseTemplates)
   }, [])
 
+  const pagination = usePagination(courseTemplates ?? [])
+
   async function handleCreate(values: CourseTemplateInput): Promise<void> {
     await window.api.courseTemplate.create(values)
     setMode({ type: 'list' })
@@ -183,49 +187,58 @@ export function CourseTemplates(): React.JSX.Element {
           action={<Button onClick={() => setMode({ type: 'create' })}>Crear curso</Button>}
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead>Activo</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {courseTemplates.map((courseTemplate) => (
-              <TableRow key={courseTemplate.id}>
-                <TableCell className="font-medium">{courseTemplate.name}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {courseTemplate.description}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={courseTemplate.active ? 'success' : 'secondary'}>
-                    {courseTemplate.active ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setMode({ type: 'edit', courseTemplate })}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(courseTemplate.id)}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </TableCell>
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Activo</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pagination.pageItems.map((courseTemplate) => (
+                <TableRow key={courseTemplate.id}>
+                  <TableCell className="font-medium">{courseTemplate.name}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {courseTemplate.description}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={courseTemplate.active ? 'success' : 'secondary'}>
+                      {courseTemplate.active ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMode({ type: 'edit', courseTemplate })}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(courseTemplate.id)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </div>
       )}
     </div>
   )

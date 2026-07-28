@@ -11,6 +11,7 @@ import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
+import { Pagination } from '../components/ui/pagination'
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ import { CourseEditionForm } from '../components/CourseEditionForm'
 import { EnrollmentsSection } from '../components/EnrollmentsSection'
 import { ClassSessionsSection } from '../components/ClassSessionsSection'
 import { CourseDetail } from '../components/CourseDetail'
+import { usePagination } from '../hooks/use-pagination'
 
 type ViewMode =
   | { type: 'list' }
@@ -62,6 +64,8 @@ export function CourseEditions(): React.JSX.Element {
     window.api.teacher.list().then(setTeachers)
     window.api.courseTemplate.list().then(setCourseTemplates)
   }, [])
+
+  const pagination = usePagination(courseEditions ?? [])
 
   function templateName(templateId: string): string {
     return (
@@ -152,60 +156,69 @@ export function CourseEditions(): React.JSX.Element {
           action={<Button onClick={() => setMode({ type: 'create' })}>Crear edición</Button>}
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Curso</TableHead>
-              <TableHead>Profesor</TableHead>
-              <TableHead>Fecha inicio</TableHead>
-              <TableHead>Fecha fin</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {courseEditions.map((courseEdition) => (
-              <TableRow key={courseEdition.id}>
-                <TableCell className="font-medium">
-                  {templateName(courseEdition.templateId)}
-                </TableCell>
-                <TableCell>{teacherName(courseEdition.teacherId)}</TableCell>
-                <TableCell>{formatDate(courseEdition.startDate)}</TableCell>
-                <TableCell>{formatDate(courseEdition.endDate)}</TableCell>
-                <TableCell>
-                  <Badge variant={STATUS_BADGE_VARIANT[courseEdition.status]}>
-                    {STATUS_LABELS[courseEdition.status]}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setMode({ type: 'detail', courseEdition })}
-                    >
-                      Ver detalle
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setMode({ type: 'edit', courseEdition })}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(courseEdition.id)}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </TableCell>
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Curso</TableHead>
+                <TableHead>Profesor</TableHead>
+                <TableHead>Fecha inicio</TableHead>
+                <TableHead>Fecha fin</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pagination.pageItems.map((courseEdition) => (
+                <TableRow key={courseEdition.id}>
+                  <TableCell className="font-medium">
+                    {templateName(courseEdition.templateId)}
+                  </TableCell>
+                  <TableCell>{teacherName(courseEdition.teacherId)}</TableCell>
+                  <TableCell>{formatDate(courseEdition.startDate)}</TableCell>
+                  <TableCell>{formatDate(courseEdition.endDate)}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_BADGE_VARIANT[courseEdition.status]}>
+                      {STATUS_LABELS[courseEdition.status]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMode({ type: 'detail', courseEdition })}
+                      >
+                        Ver detalle
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMode({ type: 'edit', courseEdition })}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(courseEdition.id)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </div>
       )}
     </div>
   )
