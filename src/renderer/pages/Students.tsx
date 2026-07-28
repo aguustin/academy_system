@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
 import { Card } from '../components/ui/card'
+import { Input } from '../components/ui/input'
 import { Pagination } from '../components/ui/pagination'
 import {
   Table,
@@ -17,7 +18,7 @@ import {
 } from '../components/ui/table'
 import { StudentForm } from '../components/StudentForm'
 import { usePagination } from '../hooks/use-pagination'
-import { sortByName } from '../lib/utils'
+import { normalizeText, sortByName } from '../lib/utils'
 
 type ViewMode = { type: 'list' } | { type: 'create' } | { type: 'edit'; student: Student }
 
@@ -27,6 +28,7 @@ export function Students(): React.JSX.Element {
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportStudentsResult | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   const loadStudents = useCallback(async () => {
     const data = await window.api.student.list()
@@ -37,7 +39,11 @@ export function Students(): React.JSX.Element {
     window.api.student.list().then((data) => setStudents(sortByName(data)))
   }, [])
 
-  const pagination = usePagination(students ?? [])
+  const filteredStudents = (students ?? []).filter((student) => {
+    const term = normalizeText(search.trim())
+    return normalizeText(student.lastName).includes(term) || student.dni.includes(search.trim())
+  })
+  const pagination = usePagination(filteredStudents)
 
   async function handleCreate(values: StudentInput): Promise<void> {
     await window.api.student.create(values)
@@ -135,6 +141,12 @@ export function Students(): React.JSX.Element {
         />
       ) : (
         <div className="space-y-4">
+          <Input
+            placeholder="Buscar por apellido o DNI..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="max-w-sm"
+          />
           <Table>
             <TableHeader>
               <TableRow>
