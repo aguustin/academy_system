@@ -29,8 +29,12 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
   sunday: 'Domingo'
 }
 
+// CourseEdition.startDate/endDate se construyen a partir de un input type="date" (sin hora),
+// lo que el motor de JS interpreta como medianoche UTC. Formatear en zona local puede mostrar
+// el día calendario anterior según el huso horario de la máquina; forzar UTC en el formateo
+// recupera el día que realmente se eligió, sin tocar cómo se genera o persiste la fecha.
 function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('es-AR')
+  return new Date(date).toLocaleDateString('es-AR', { timeZone: 'UTC' })
 }
 
 interface MyCoursesProps {

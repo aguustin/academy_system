@@ -29,7 +29,7 @@ import { FormField } from './ui/form-field'
 import { Pagination } from './ui/pagination'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { StudentDetail } from './StudentDetail'
-import { normalizeText, sortByName, stripTimestampPrefix } from '../lib/utils'
+import { normalizeText, sortByDateDesc, sortByName, stripTimestampPrefix } from '../lib/utils'
 import { useAuth } from '../auth/AuthContext'
 import { usePagination } from '../hooks/use-pagination'
 
@@ -72,6 +72,15 @@ function gradeFieldError(grade: number | null): string | null {
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString('es-AR')
+}
+
+// CourseEdition.startDate/endDate se construyen a partir de un input type="date" (sin hora),
+// lo que el motor de JS interpreta como medianoche UTC. Formatear en zona local puede mostrar
+// el día calendario anterior según el huso horario de la máquina; forzar UTC en el formateo
+// recupera el día que realmente se eligió, sin tocar cómo se genera o persiste la fecha.
+// (Las fechas de ClassSession no tienen este problema y siguen usando formatDate normal.)
+function formatCourseEditionDate(date: Date): string {
+  return new Date(date).toLocaleDateString('es-AR', { timeZone: 'UTC' })
 }
 
 type AttendanceMode =
@@ -443,6 +452,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   }
 
   const { courseEdition, courseTemplate, teacher, classSessions } = detail
+  const sortedClassSessions = sortByDateDesc(classSessions, (classSession) => classSession.date)
 
   return (
     <div className="space-y-8">
@@ -458,7 +468,8 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
       <Card className="space-y-1 p-6 text-sm text-muted-foreground">
         <p>Profesor: {teacher ? `${teacher.firstName} ${teacher.lastName}` : '—'}</p>
         <p>
-          Inicio: {formatDate(courseEdition.startDate)} · Fin: {formatDate(courseEdition.endDate)}
+          Inicio: {formatCourseEditionDate(courseEdition.startDate)} · Fin:{' '}
+          {formatCourseEditionDate(courseEdition.endDate)}
         </p>
         <ul>
           {courseEdition.schedules.map((schedule, index) => (
@@ -596,7 +607,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classSessions.map((classSession) => (
+              {sortedClassSessions.map((classSession) => (
                 <TableRow
                   key={classSession.id}
                   onClick={canManageAttendance ? () => openClass(classSession) : undefined}
@@ -807,7 +818,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {results.map((student) => {
+                  {sortByName(results).map((student) => {
                     const error = gradeFieldError(student.grade)
                     return (
                       <TableRow key={student.studentId}>

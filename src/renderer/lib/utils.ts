@@ -24,3 +24,7 @@ const DIACRITICS_PATTERN = new RegExp('[̀-ͯ]', 'g')
 export function normalizeText(value: string): string {
   return value.normalize('NFD').replace(DIACRITICS_PATTERN, '').toLowerCase()
 }
+
+export function sortByDateDesc<T>(items: T[], getDate: (item: T) => Date): T[] {
+  return [...items].sort((a, b) => new Date(getDate(b)).getTime() - new Date(getDate(a)).getTime())
+}

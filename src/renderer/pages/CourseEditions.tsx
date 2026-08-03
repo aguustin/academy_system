@@ -9,6 +9,7 @@ import type {
 import type { Teacher } from '../../shared/teachers'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
+import { Input } from '../components/ui/input'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
 import { Pagination } from '../components/ui/pagination'
@@ -25,6 +26,7 @@ import { EnrollmentsSection } from '../components/EnrollmentsSection'
 import { ClassSessionsSection } from '../components/ClassSessionsSection'
 import { CourseDetail } from '../components/CourseDetail'
 import { usePagination } from '../hooks/use-pagination'
+import { normalizeText, sortByDateDesc } from '../lib/utils'
 
 type ViewMode =
   | { type: 'list' }
@@ -44,8 +46,12 @@ const STATUS_BADGE_VARIANT: Record<CourseEditionStatus, 'secondary' | 'success' 
   finished: 'outline'
 }
 
+// CourseEdition.startDate/endDate se construyen a partir de un input type="date" (sin hora),
+// lo que el motor de JS interpreta como medianoche UTC. Formatear en zona local puede mostrar
+// el día calendario anterior según el huso horario de la máquina; forzar UTC en el formateo
+// recupera el día que realmente se eligió, sin tocar cómo se genera o persiste la fecha.
 function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('es-AR')
+  return new Date(date).toLocaleDateString('es-AR', { timeZone: 'UTC' })
 }
 
 export function CourseEditions(): React.JSX.Element {
@@ -53,6 +59,7 @@ export function CourseEditions(): React.JSX.Element {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [courseTemplates, setCourseTemplates] = useState<CourseTemplate[]>([])
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
+  const [search, setSearch] = useState('')
 
   const loadCourseEditions = useCallback(async () => {
     const data = await window.api.courseEdition.list()
@@ -65,7 +72,14 @@ export function CourseEditions(): React.JSX.Element {
     window.api.courseTemplate.list().then(setCourseTemplates)
   }, [])
 
-  const pagination = usePagination(courseEditions ?? [])
+  const sortedCourseEditions = sortByDateDesc(
+    courseEditions ?? [],
+    (courseEdition) => courseEdition.startDate
+  )
+  const filteredCourseEditions = sortedCourseEditions.filter((courseEdition) =>
+    normalizeText(templateName(courseEdition.templateId)).includes(normalizeText(search.trim()))
+  )
+  const pagination = usePagination(filteredCourseEditions)
 
   function templateName(templateId: string): string {
     return (
@@ -124,7 +138,14 @@ export function CourseEditions(): React.JSX.Element {
     return (
       <div className="space-y-10">
         <div className="space-y-6">
-          <PageHeader title="Editar edición" />
+          <PageHeader
+            title="Editar edición"
+            action={
+              <Button variant="outline" size="sm" onClick={() => setMode({ type: 'list' })}>
+                Volver
+              </Button>
+            }
+          />
           <CourseEditionForm
             initialValues={courseEdition}
             teachers={teachers}
@@ -157,6 +178,12 @@ export function CourseEditions(): React.JSX.Element {
         />
       ) : (
         <div className="space-y-4">
+          <Input
+            placeholder="Buscar por curso..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="max-w-sm"
+          />
           <Table>
             <TableHeader>
               <TableRow>

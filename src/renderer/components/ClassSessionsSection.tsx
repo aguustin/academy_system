@@ -4,6 +4,7 @@ import type { ClassSession } from '../../shared/class-sessions'
 import { Button } from './ui/button'
 import { EmptyState } from './ui/empty-state'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
+import { sortByDateDesc } from '../lib/utils'
 
 interface ClassSessionsSectionProps {
   courseEditionId: string
@@ -59,14 +60,16 @@ export function ClassSessionsSection({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {classSessions.map((classSession) => (
-              <TableRow key={classSession.id}>
-                <TableCell className="font-medium">{formatDate(classSession.date)}</TableCell>
-                <TableCell>
-                  {classSession.startTime} - {classSession.endTime}
-                </TableCell>
-              </TableRow>
-            ))}
+            {sortByDateDesc(classSessions, (classSession) => classSession.date).map(
+              (classSession) => (
+                <TableRow key={classSession.id}>
+                  <TableCell className="font-medium">{formatDate(classSession.date)}</TableCell>
+                  <TableCell>
+                    {classSession.startTime} - {classSession.endTime}
+                  </TableCell>
+                </TableRow>
+              )
+            )}
           </TableBody>
         </Table>
       )}

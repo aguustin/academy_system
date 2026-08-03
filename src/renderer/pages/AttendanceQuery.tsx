@@ -59,7 +59,15 @@ export function AttendanceQuery(): React.JSX.Element {
     window.api.attendance.list(courseEditionId, parseLocalDate(date)).then(setAttendances)
   }, [courseEditionId, date])
 
-  const pagination = usePagination(attendances ?? [])
+  const sortedAttendances = [...(attendances ?? [])].sort((a, b) => {
+    const studentA = students.find((candidate) => candidate.id === a.studentId)
+    const studentB = students.find((candidate) => candidate.id === b.studentId)
+    return (
+      (studentA?.lastName ?? '').localeCompare(studentB?.lastName ?? '', 'es') ||
+      (studentA?.firstName ?? '').localeCompare(studentB?.firstName ?? '', 'es')
+    )
+  })
+  const pagination = usePagination(sortedAttendances)
 
   function templateName(templateId: string): string {
     return courseTemplates.find((template) => template.id === templateId)?.name ?? templateId

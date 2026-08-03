@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { copyFile, mkdir, unlink } from 'node:fs/promises'
 import path from 'node:path'
-import { app, dialog, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 
 function getStorageDir(folder: string): string {
   return path.join(app.getPath('userData'), folder)
@@ -15,10 +15,13 @@ export async function pickAndStoreFile(
   extensions: string[],
   filterName: string
 ): Promise<string | null> {
-  const dialogResult = await dialog.showOpenDialog({
-    properties: ['openFile'],
-    filters: [{ name: filterName, extensions }]
-  })
+  // Sin la ventana padre, en Windows el foco de teclado a veces no vuelve correctamente al
+  // cerrar el diálogo nativo, dejando inputs y selects sin responder (los clics siguen andando).
+  const options = { properties: ['openFile' as const], filters: [{ name: filterName, extensions }] }
+  const parentWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const dialogResult = parentWindow
+    ? await dialog.showOpenDialog(parentWindow, options)
+    : await dialog.showOpenDialog(options)
   if (dialogResult.canceled || dialogResult.filePaths.length === 0) {
     return null
   }

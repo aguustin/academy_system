@@ -5,6 +5,7 @@ import type { CourseTemplateInput } from '../../shared/electron-api'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Card } from '../components/ui/card'
+import { Input } from '../components/ui/input'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
 import { Pagination } from '../components/ui/pagination'
@@ -17,7 +18,7 @@ import {
   TableRow
 } from '../components/ui/table'
 import { CourseTemplateForm } from '../components/CourseTemplateForm'
-import { stripTimestampPrefix } from '../lib/utils'
+import { normalizeText, stripTimestampPrefix } from '../lib/utils'
 import { usePagination } from '../hooks/use-pagination'
 
 interface CourseProgramSectionProps {
@@ -111,6 +112,7 @@ type ViewMode =
 export function CourseTemplates(): React.JSX.Element {
   const [courseTemplates, setCourseTemplates] = useState<CourseTemplate[] | null>(null)
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
+  const [search, setSearch] = useState('')
 
   const loadCourseTemplates = useCallback(async () => {
     const data = await window.api.courseTemplate.list()
@@ -121,7 +123,10 @@ export function CourseTemplates(): React.JSX.Element {
     window.api.courseTemplate.list().then(setCourseTemplates)
   }, [])
 
-  const pagination = usePagination(courseTemplates ?? [])
+  const filteredCourseTemplates = (courseTemplates ?? []).filter((courseTemplate) =>
+    normalizeText(courseTemplate.name).includes(normalizeText(search.trim()))
+  )
+  const pagination = usePagination(filteredCourseTemplates)
 
   async function handleCreate(values: CourseTemplateInput): Promise<void> {
     await window.api.courseTemplate.create(values)
@@ -188,6 +193,12 @@ export function CourseTemplates(): React.JSX.Element {
         />
       ) : (
         <div className="space-y-4">
+          <Input
+            placeholder="Buscar por nombre..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="max-w-sm"
+          />
           <Table>
             <TableHeader>
               <TableRow>

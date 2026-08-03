@@ -1,4 +1,4 @@
-import { dialog } from 'electron'
+import { BrowserWindow, dialog } from 'electron'
 import ExcelJS from 'exceljs'
 import { z } from 'zod'
 import { studentSchema, type Student } from '../../shared/students'
@@ -54,10 +54,16 @@ function cellToText(value: ExcelJS.CellValue): string {
 // Toda la lectura del archivo ocurre en el proceso principal: el renderer solo dispara la
 // importación y recibe el resumen final (Importados/Duplicados/Inválidos).
 export async function importStudentsFromExcel(): Promise<ImportStudentsResult | null> {
-  const dialogResult = await dialog.showOpenDialog({
-    properties: ['openFile'],
+  // Sin la ventana padre, en Windows el foco de teclado a veces no vuelve correctamente al
+  // cerrar el diálogo nativo, dejando inputs y selects sin responder (los clics siguen andando).
+  const options = {
+    properties: ['openFile' as const],
     filters: [{ name: 'Excel', extensions: ['xlsx', 'xls'] }]
-  })
+  }
+  const parentWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const dialogResult = parentWindow
+    ? await dialog.showOpenDialog(parentWindow, options)
+    : await dialog.showOpenDialog(options)
   if (dialogResult.canceled || dialogResult.filePaths.length === 0) {
     return null
   }
