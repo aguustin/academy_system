@@ -106,6 +106,8 @@ export async function exportCourseEditionsAttendance(
     )
 
     for (const student of students) {
+      // usedAbsences ya calcula las faltas solo sobre las clases con fecha anterior o igual a
+      // "hoy" (el momento de la exportación), sin contar clases futuras que todavía no pasaron.
       const stats = computeAttendanceStats(classSessions, attendanceRecords, student.id)
       worksheet.addRow([
         student.lastName,
@@ -113,11 +115,24 @@ export async function exportCourseEditionsAttendance(
         student.dni,
         stats.totalClasses,
         stats.attendanceCount,
-        stats.totalClasses - stats.attendanceCount
+        stats.usedAbsences
       ])
     }
   }
 
-  await workbook.xlsx.writeFile(dialogResult.filePath)
+  try {
+    await workbook.xlsx.writeFile(dialogResult.filePath)
+  } catch (error) {
+    // EBUSY: el archivo elegido está abierto en Excel u otro programa que lo tiene bloqueado en
+    // Windows. Es un error esperable (no un bug), así que se traduce a un mensaje accionable.
+    if (error instanceof Error && 'code' in error && error.code === 'EBUSY') {
+      throw new Error(
+        'No se pudo guardar el archivo porque está abierto en Excel u otro programa. Cerralo e intentá exportar de nuevo.',
+        { cause: error }
+      )
+    }
+    throw error
+  }
+
   return dialogResult.filePath
 }
