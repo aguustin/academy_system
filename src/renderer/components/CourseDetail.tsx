@@ -28,6 +28,7 @@ import { EmptyState } from './ui/empty-state'
 import { FormField } from './ui/form-field'
 import { Pagination } from './ui/pagination'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
+import { useAlertDialog, useConfirm } from './ui/confirm-dialog'
 import { StudentDetail } from './StudentDetail'
 import { normalizeText, sortByDateDesc, sortByName, stripTimestampPrefix } from '../lib/utils'
 import { useAuth } from '../auth/AuthContext'
@@ -115,6 +116,7 @@ function EvaluationForm({
   onCancel,
   onPdfChange
 }: EvaluationFormProps): React.JSX.Element {
+  const confirm = useConfirm()
   const [values, setValues] = useState<EvaluationFormValues>({
     name: initialValues?.name ?? '',
     type: initialValues?.type ?? 'process'
@@ -166,7 +168,7 @@ function EvaluationForm({
 
   async function handleRemovePdf(): Promise<void> {
     if (!initialValues) return
-    if (!window.confirm('¿Eliminar el archivo PDF de esta evaluación?')) return
+    if (!(await confirm('¿Eliminar el archivo PDF de esta evaluación?'))) return
     setPdfError(null)
     setPdfWorking(true)
     try {
@@ -277,6 +279,8 @@ interface CourseDetailProps {
 
 export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): React.JSX.Element {
   const { user } = useAuth()
+  const confirm = useConfirm()
+  const alertDialog = useAlertDialog()
   const canManageAttendance = user?.role === 'admin'
   const [detail, setDetail] = useState<TeacherCourseDetail | null>(null)
   const [attendanceMode, setAttendanceMode] = useState<AttendanceMode>({ type: 'closed' })
@@ -362,7 +366,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   }
 
   async function handleDeleteEvaluation(id: string): Promise<void> {
-    if (!window.confirm('¿Eliminar esta evaluación?')) return
+    if (!(await confirm('¿Eliminar esta evaluación?'))) return
     await window.api.evaluation.delete(id)
     await loadEvaluations()
   }
@@ -383,7 +387,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
     try {
       await window.api.evaluation.openPdf(evaluationId)
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'No se pudo abrir el archivo.')
+      await alertDialog(error instanceof Error ? error.message : 'No se pudo abrir el archivo.')
     }
   }
 

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { createHashRouter, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { ThemeProvider } from './theme/theme-context'
+import { ConfirmDialogProvider } from './components/ui/confirm-dialog'
 import { RequireAuth, RequireChangePassword } from './auth/RequireAuth'
 import { RequireAdmin } from './auth/RequireAdmin'
 import { AppLayout } from './components/AppLayout'
@@ -59,9 +60,11 @@ const router = createHashRouter([
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
     <ThemeProvider>
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
+      <ConfirmDialogProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ConfirmDialogProvider>
     </ThemeProvider>
   </StrictMode>
 )

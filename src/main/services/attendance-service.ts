@@ -108,8 +108,7 @@ function buildAttendanceFeedback(stats: AttendanceStats): AttendanceFeedback {
 
   if (!stats.meetsAttendanceRequirement) {
     feedbackType = 'failed'
-    feedbackMessage =
-      'Ya no cumplís con el porcentaje mínimo de asistencia requerido. Por favor hablá con el administrador para revisar tu situación.'
+    feedbackMessage = `Tenés ${stats.attendanceCount} asistencias de ${stats.totalClasses} clases.`
   } else if (stats.remainingAbsences === 0) {
     feedbackType = 'warning'
     feedbackMessage =

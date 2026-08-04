@@ -25,6 +25,7 @@ import { CourseEditionForm } from '../components/CourseEditionForm'
 import { EnrollmentsSection } from '../components/EnrollmentsSection'
 import { ClassSessionsSection } from '../components/ClassSessionsSection'
 import { CourseDetail } from '../components/CourseDetail'
+import { useConfirm } from '../components/ui/confirm-dialog'
 import { usePagination } from '../hooks/use-pagination'
 import { normalizeText, sortByDateDesc } from '../lib/utils'
 
@@ -55,6 +56,7 @@ function formatDate(date: Date): string {
 }
 
 export function CourseEditions(): React.JSX.Element {
+  const confirm = useConfirm()
   const [courseEditions, setCourseEditions] = useState<CourseEdition[] | null>(null)
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [courseTemplates, setCourseTemplates] = useState<CourseTemplate[]>([])
@@ -105,7 +107,7 @@ export function CourseEditions(): React.JSX.Element {
   }
 
   async function handleDelete(id: string): Promise<void> {
-    if (!window.confirm('¿Eliminar esta edición de curso?')) return
+    if (!(await confirm('¿Eliminar esta edición de curso?'))) return
     await window.api.courseEdition.delete(id)
     await loadCourseEditions()
   }

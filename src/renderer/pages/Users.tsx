@@ -20,6 +20,7 @@ import {
   type UserCreateFormValues,
   type UserUpdateFormValues
 } from '../components/UserForm'
+import { useAlertDialog, useConfirm } from '../components/ui/confirm-dialog'
 import { usePagination } from '../hooks/use-pagination'
 
 type ViewMode = { type: 'list' } | { type: 'create' } | { type: 'edit'; user: UserListItem }
@@ -31,6 +32,8 @@ const ROLE_LABELS = {
 
 export function Users(): React.JSX.Element {
   const { user: currentUser } = useAuth()
+  const confirm = useConfirm()
+  const alertDialog = useAlertDialog()
   const [users, setUsers] = useState<UserListItem[] | null>(null)
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
 
@@ -59,22 +62,22 @@ export function Users(): React.JSX.Element {
 
   async function handleDelete(user: UserListItem): Promise<void> {
     if (user.id === currentUser?.id) {
-      window.alert('No podés eliminar tu propio usuario.')
+      await alertDialog('No podés eliminar tu propio usuario.')
       return
     }
-    if (!window.confirm(`¿Eliminar al usuario "${user.username}"?`)) return
+    if (!(await confirm(`¿Eliminar al usuario "${user.username}"?`))) return
     try {
       await window.api.user.delete(user.id)
       await loadUsers()
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'No se pudo eliminar el usuario.')
+      await alertDialog(error instanceof Error ? error.message : 'No se pudo eliminar el usuario.')
     }
   }
 
   async function handleResetPassword(user: UserListItem): Promise<void> {
-    if (!window.confirm(`¿Restablecer la contraseña de "${user.username}"?`)) return
+    if (!(await confirm(`¿Restablecer la contraseña de "${user.username}"?`))) return
     await window.api.user.resetPassword(user.id)
-    window.alert('Contraseña restablecida correctamente.')
+    await alertDialog('Contraseña restablecida correctamente.')
     await loadUsers()
   }
 

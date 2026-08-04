@@ -18,6 +18,7 @@ import {
   TableRow
 } from '../components/ui/table'
 import { CourseTemplateForm } from '../components/CourseTemplateForm'
+import { useConfirm } from '../components/ui/confirm-dialog'
 import { normalizeText, stripTimestampPrefix } from '../lib/utils'
 import { usePagination } from '../hooks/use-pagination'
 
@@ -30,6 +31,7 @@ function CourseProgramSection({
   courseTemplate,
   onChange
 }: CourseProgramSectionProps): React.JSX.Element {
+  const confirm = useConfirm()
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,7 +58,7 @@ function CourseProgramSection({
   }
 
   async function handleRemove(): Promise<void> {
-    if (!window.confirm('¿Eliminar el programa de este curso?')) return
+    if (!(await confirm('¿Eliminar el programa de este curso?'))) return
     setError(null)
     setWorking(true)
     try {
@@ -110,6 +112,7 @@ type ViewMode =
   { type: 'list' } | { type: 'create' } | { type: 'edit'; courseTemplate: CourseTemplate }
 
 export function CourseTemplates(): React.JSX.Element {
+  const confirm = useConfirm()
   const [courseTemplates, setCourseTemplates] = useState<CourseTemplate[] | null>(null)
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
   const [search, setSearch] = useState('')
@@ -141,7 +144,7 @@ export function CourseTemplates(): React.JSX.Element {
   }
 
   async function handleDelete(id: string): Promise<void> {
-    if (!window.confirm('¿Eliminar este curso?')) return
+    if (!(await confirm('¿Eliminar este curso?'))) return
     await window.api.courseTemplate.delete(id)
     await loadCourseTemplates()
   }

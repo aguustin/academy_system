@@ -17,12 +17,14 @@ import {
   TableRow
 } from '../components/ui/table'
 import { StudentForm } from '../components/StudentForm'
+import { useConfirm } from '../components/ui/confirm-dialog'
 import { usePagination } from '../hooks/use-pagination'
 import { normalizeText, sortByName } from '../lib/utils'
 
 type ViewMode = { type: 'list' } | { type: 'create' } | { type: 'edit'; student: Student }
 
 export function Students(): React.JSX.Element {
+  const confirm = useConfirm()
   const [students, setStudents] = useState<Student[] | null>(null)
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
   const [importing, setImporting] = useState(false)
@@ -58,7 +60,7 @@ export function Students(): React.JSX.Element {
   }
 
   async function handleDelete(id: string): Promise<void> {
-    if (!window.confirm('¿Eliminar este alumno?')) return
+    if (!(await confirm('¿Eliminar este alumno?'))) return
     await window.api.student.delete(id)
     await loadStudents()
   }
