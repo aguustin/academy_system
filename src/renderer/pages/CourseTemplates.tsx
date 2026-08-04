@@ -19,7 +19,7 @@ import {
 } from '../components/ui/table'
 import { CourseTemplateForm } from '../components/CourseTemplateForm'
 import { useConfirm } from '../components/ui/confirm-dialog'
-import { normalizeText, stripTimestampPrefix } from '../lib/utils'
+import { normalizeText, sortByField, stripTimestampPrefix } from '../lib/utils'
 import { usePagination } from '../hooks/use-pagination'
 
 interface CourseProgramSectionProps {
@@ -126,8 +126,11 @@ export function CourseTemplates(): React.JSX.Element {
     window.api.courseTemplate.list().then(setCourseTemplates)
   }, [])
 
-  const filteredCourseTemplates = (courseTemplates ?? []).filter((courseTemplate) =>
-    normalizeText(courseTemplate.name).includes(normalizeText(search.trim()))
+  const filteredCourseTemplates = sortByField(
+    (courseTemplates ?? []).filter((courseTemplate) =>
+      normalizeText(courseTemplate.name).includes(normalizeText(search.trim()))
+    ),
+    (courseTemplate) => courseTemplate.name
   )
   const pagination = usePagination(filteredCourseTemplates)
 

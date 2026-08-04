@@ -127,6 +127,26 @@ export function CourseEditions(): React.JSX.Element {
     })
   }
 
+  // Alcanza a las ediciones que coinciden con la búsqueda actual (todas, si no hay texto
+  // cargado), no solo a la página visible — así "Exportar" puede cubrir la lista completa.
+  const allFilteredSelected =
+    filteredCourseEditions.length > 0 &&
+    filteredCourseEditions.every((courseEdition) => selectedIds.has(courseEdition.id))
+
+  function toggleSelectAll(): void {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      for (const courseEdition of filteredCourseEditions) {
+        if (allFilteredSelected) {
+          next.delete(courseEdition.id)
+        } else {
+          next.add(courseEdition.id)
+        }
+      }
+      return next
+    })
+  }
+
   async function handleExport(): Promise<void> {
     setExporting(true)
     try {
@@ -221,12 +241,17 @@ export function CourseEditions(): React.JSX.Element {
         />
       ) : (
         <div className="space-y-4">
-          <Input
-            placeholder="Buscar por curso..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="max-w-sm"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Buscar por curso..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="max-w-sm"
+            />
+            <Button variant="outline" size="sm" onClick={toggleSelectAll}>
+              {allFilteredSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
+            </Button>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>

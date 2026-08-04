@@ -4,6 +4,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Card } from './ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
+import { sortByField } from '../lib/utils'
 
 const EVALUATION_STATUS_LABELS: Record<CertificationEvaluationStatus, string> = {
   approved: 'Aprobada',
@@ -97,7 +98,7 @@ export function StudentDetail({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {evaluations.map((evaluation) => (
+              {sortByField(evaluations, (evaluation) => evaluation.name).map((evaluation) => (
                 <TableRow key={evaluation.id}>
                   <TableCell className="font-medium">{evaluation.name}</TableCell>
                   <TableCell>{evaluation.grade ?? '—'}</TableCell>

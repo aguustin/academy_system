@@ -30,7 +30,13 @@ import { Pagination } from './ui/pagination'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
 import { useAlertDialog, useConfirm } from './ui/confirm-dialog'
 import { StudentDetail } from './StudentDetail'
-import { normalizeText, sortByDateDesc, sortByName, stripTimestampPrefix } from '../lib/utils'
+import {
+  normalizeText,
+  sortByDateDesc,
+  sortByField,
+  sortByName,
+  stripTimestampPrefix
+} from '../lib/utils'
 import { useAuth } from '../auth/AuthContext'
 import { usePagination } from '../hooks/use-pagination'
 
@@ -296,7 +302,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   const [resultsError, setResultsError] = useState<string | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [studentSearch, setStudentSearch] = useState('')
-  const evaluationsPagination = usePagination(evaluations ?? [])
+  const evaluationsPagination = usePagination(
+    sortByField(evaluations ?? [], (evaluation) => evaluation.name)
+  )
 
   useEffect(() => {
     window.api.teacherCourse.getDetail(courseEditionId).then(setDetail)

@@ -46,7 +46,16 @@ export function Users(): React.JSX.Element {
     window.api.user.list().then(setUsers)
   }, [])
 
-  const pagination = usePagination(users ?? [])
+  // Apellido ASC, luego nombre ASC (misma convención que el resto de la app). Los administradores
+  // sin Teacher vinculado no tienen nombre/apellido: se ordenan por username entre ellos.
+  const sortedUsers = [...(users ?? [])].sort((a, b) => {
+    const lastNameComparison = (a.lastName ?? '').localeCompare(b.lastName ?? '', 'es')
+    if (lastNameComparison !== 0) return lastNameComparison
+    const firstNameComparison = (a.firstName ?? '').localeCompare(b.firstName ?? '', 'es')
+    if (firstNameComparison !== 0) return firstNameComparison
+    return a.username.localeCompare(b.username, 'es')
+  })
+  const pagination = usePagination(sortedUsers)
 
   async function handleCreate(values: UserCreateFormValues): Promise<void> {
     await window.api.user.create(values)

@@ -28,3 +28,9 @@ export function normalizeText(value: string): string {
 export function sortByDateDesc<T>(items: T[], getDate: (item: T) => Date): T[] {
   return [...items].sort((a, b) => new Date(getDate(b)).getTime() - new Date(getDate(a)).getTime())
 }
+
+// Orden alfabético A-Z genérico por un campo de texto (nombres de curso, evaluación, etc.).
+// localeCompare con 'es' evita que Mongo (orden binario) ordene mal mayúsculas o letras con tilde.
+export function sortByField<T>(items: T[], getField: (item: T) => string): T[] {
+  return [...items].sort((a, b) => getField(a).localeCompare(getField(b), 'es'))
+}

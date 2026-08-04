@@ -9,26 +9,38 @@ import { listClassSessionsByEdition } from './class-session-service'
 import { computeAttendanceStats } from './attendance-service'
 
 const SHEET_NAME_MAX_LENGTH = 31
+// Cuántos caracteres del final del nombre se preservan siempre al recortar: ahí suelen ir los
+// sufijos que distinguen ediciones parecidas (turno tarde/mañana, comisión, etc.), por ejemplo
+// "- TT"/"- TM". El resto del presupuesto de 31 caracteres se usa para el principio del nombre.
+const SHEET_NAME_TAIL_LENGTH = 13
 
-// Los nombres de hoja de Excel no admiten \ / ? * [ ] : y tienen un máximo de 31 caracteres.
+// Los nombres de hoja de Excel no admiten \ / ? * [ ] : y tienen un máximo de 31 caracteres. Si
+// hay que recortar, se conserva el principio Y el final del nombre (con "…" en el medio) en vez
+// de cortar todo lo que sobra desde el final, que es justo donde suele ir lo que diferencia a una
+// edición de otra con nombre casi idéntico.
 function sanitizeSheetName(name: string): string {
-  const cleaned = name.replace(/[\\/?*[\]:]/g, ' ').trim()
-  return cleaned.slice(0, SHEET_NAME_MAX_LENGTH) || 'Edición'
+  const cleaned = name.replace(/[\\/?*[\]:]/g, ' ').trim() || 'Edición'
+  if (cleaned.length <= SHEET_NAME_MAX_LENGTH) return cleaned
+
+  const headLength = SHEET_NAME_MAX_LENGTH - SHEET_NAME_TAIL_LENGTH - 1 // -1 por el "…"
+  const head = cleaned.slice(0, headLength).trimEnd()
+  const tail = cleaned.slice(-SHEET_NAME_TAIL_LENGTH).trimStart()
+  return `${head}…${tail}`
 }
 
-// Si dos ediciones exportadas juntas comparten el mismo nombre de curso, se numeran para que
-// cada una tenga su propia hoja sin pisar a la anterior.
-function uniqueSheetName(baseName: string, usedNames: Set<string>): string {
+// Excel compara nombres de hoja sin distinguir mayúsculas de minúsculas: si dos ediciones
+// exportadas juntas comparten el mismo nombre de curso (aunque difieran solo en el case), se
+// numeran para que cada una tenga su propia hoja sin pisar a la anterior.
+function uniqueSheetName(baseName: string, usedNormalizedNames: Set<string>): string {
   const sanitized = sanitizeSheetName(baseName)
-  if (!usedNames.has(sanitized)) return sanitized
 
+  let candidate = sanitized
   let suffix = 2
-  let candidate: string
-  do {
+  while (usedNormalizedNames.has(candidate.toUpperCase())) {
     const suffixText = ` (${suffix})`
     candidate = `${sanitized.slice(0, SHEET_NAME_MAX_LENGTH - suffixText.length)}${suffixText}`
     suffix++
-  } while (usedNames.has(candidate))
+  }
   return candidate
 }
 
@@ -55,7 +67,7 @@ export async function exportCourseEditionsAttendance(
   }
 
   const workbook = new ExcelJS.Workbook()
-  const usedSheetNames = new Set<string>()
+  const usedNormalizedSheetNames = new Set<string>()
 
   for (const courseEditionId of courseEditionIds) {
     const courseEdition = await findCourseEditionById(courseEditionId)
@@ -64,8 +76,8 @@ export async function exportCourseEditionsAttendance(
     const courseTemplate = await findCourseTemplateById(courseEdition.templateId)
     const editionName = courseTemplate?.name ?? courseEdition.templateId
 
-    const sheetName = uniqueSheetName(editionName, usedSheetNames)
-    usedSheetNames.add(sheetName)
+    const sheetName = uniqueSheetName(editionName, usedNormalizedSheetNames)
+    usedNormalizedSheetNames.add(sheetName.toUpperCase())
 
     const worksheet = workbook.addWorksheet(sheetName)
     worksheet.columns = [
@@ -84,7 +96,7 @@ export async function exportCourseEditionsAttendance(
       'DNI',
       'Clases totales',
       'Asistencias',
-      'Faltas'
+      'Inasistencias'
     ])
     headerRow.font = { bold: true }
 
