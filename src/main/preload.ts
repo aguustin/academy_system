@@ -130,6 +130,9 @@ const api: ElectronApi = {
   },
   dashboard: {
     getSummary: () => ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_SUMMARY)
+  },
+  search: {
+    global: (query) => ipcRenderer.invoke(IPC_CHANNELS.SEARCH_GLOBAL, query)
   }
 }
 

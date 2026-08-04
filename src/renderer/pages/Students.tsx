@@ -19,6 +19,7 @@ import {
 import { StudentForm } from '../components/StudentForm'
 import { useConfirm } from '../components/ui/confirm-dialog'
 import { usePagination } from '../hooks/use-pagination'
+import { usePrefillSearch } from '../hooks/use-prefill-search'
 import { normalizeText, sortByName } from '../lib/utils'
 
 type ViewMode = { type: 'list' } | { type: 'create' } | { type: 'edit'; student: Student }
@@ -30,7 +31,7 @@ export function Students(): React.JSX.Element {
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportStudentsResult | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = usePrefillSearch()
 
   const loadStudents = useCallback(async () => {
     const data = await window.api.student.list()

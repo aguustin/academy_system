@@ -22,6 +22,7 @@ import type {
 } from './evaluations'
 import type { DashboardSummary } from './dashboard'
 import type { Holiday, HolidayInput } from './holidays'
+import type { GlobalSearchResults } from './search'
 
 export type TeacherInput = Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>
 export type CourseTemplateInput = Omit<
@@ -216,5 +217,8 @@ export interface ElectronApi {
   }
   dashboard: {
     getSummary: () => Promise<DashboardSummary>
+  }
+  search: {
+    global: (query: string) => Promise<GlobalSearchResults>
   }
 }

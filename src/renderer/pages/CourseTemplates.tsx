@@ -21,6 +21,7 @@ import { CourseTemplateForm } from '../components/CourseTemplateForm'
 import { useConfirm } from '../components/ui/confirm-dialog'
 import { normalizeText, sortByField, stripTimestampPrefix } from '../lib/utils'
 import { usePagination } from '../hooks/use-pagination'
+import { usePrefillSearch } from '../hooks/use-prefill-search'
 
 interface CourseProgramSectionProps {
   courseTemplate: CourseTemplate
@@ -115,7 +116,7 @@ export function CourseTemplates(): React.JSX.Element {
   const confirm = useConfirm()
   const [courseTemplates, setCourseTemplates] = useState<CourseTemplate[] | null>(null)
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = usePrefillSearch()
 
   const loadCourseTemplates = useCallback(async () => {
     const data = await window.api.courseTemplate.list()

@@ -4,6 +4,7 @@ import type { UserListItem } from '../../shared/electron-api'
 import { useAuth } from '../auth/AuthContext'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
+import { Input } from '../components/ui/input'
 import { PageHeader } from '../components/ui/page-header'
 import { EmptyState } from '../components/ui/empty-state'
 import { Pagination } from '../components/ui/pagination'
@@ -22,6 +23,8 @@ import {
 } from '../components/UserForm'
 import { useAlertDialog, useConfirm } from '../components/ui/confirm-dialog'
 import { usePagination } from '../hooks/use-pagination'
+import { usePrefillSearch } from '../hooks/use-prefill-search'
+import { normalizeText } from '../lib/utils'
 
 type ViewMode = { type: 'list' } | { type: 'create' } | { type: 'edit'; user: UserListItem }
 
@@ -36,6 +39,7 @@ export function Users(): React.JSX.Element {
   const alertDialog = useAlertDialog()
   const [users, setUsers] = useState<UserListItem[] | null>(null)
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
+  const [search, setSearch] = usePrefillSearch()
 
   const loadUsers = useCallback(async () => {
     const data = await window.api.user.list()
@@ -55,7 +59,17 @@ export function Users(): React.JSX.Element {
     if (firstNameComparison !== 0) return firstNameComparison
     return a.username.localeCompare(b.username, 'es')
   })
-  const pagination = usePagination(sortedUsers)
+  const filteredUsers = sortedUsers.filter((user) => {
+    const term = normalizeText(search.trim())
+    if (!term) return true
+    return (
+      normalizeText(user.lastName ?? '').includes(term) ||
+      normalizeText(user.firstName ?? '').includes(term) ||
+      normalizeText(user.username).includes(term) ||
+      (user.dni ?? '').includes(search.trim())
+    )
+  })
+  const pagination = usePagination(filteredUsers)
 
   async function handleCreate(values: UserCreateFormValues): Promise<void> {
     await window.api.user.create(values)
@@ -134,6 +148,12 @@ export function Users(): React.JSX.Element {
         />
       ) : (
         <div className="space-y-4">
+          <Input
+            placeholder="Buscar por nombre, apellido, usuario o DNI..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="max-w-sm"
+          />
           <Table>
             <TableHeader>
               <TableRow>
