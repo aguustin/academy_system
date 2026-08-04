@@ -139,6 +139,7 @@ export interface ElectronApi {
     getById: (id: string) => Promise<CourseEdition | null>
     update: (id: string, data: CourseEditionInput) => Promise<CourseEdition | null>
     delete: (id: string) => Promise<void>
+    exportAttendance: (courseEditionIds: string[]) => Promise<string | null>
   }
   student: {
     list: () => Promise<Student[]>

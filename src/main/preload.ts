@@ -40,7 +40,9 @@ const api: ElectronApi = {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.COURSE_EDITION_LIST),
     getById: (id) => ipcRenderer.invoke(IPC_CHANNELS.COURSE_EDITION_GET_BY_ID, id),
     update: (id, data) => ipcRenderer.invoke(IPC_CHANNELS.COURSE_EDITION_UPDATE, id, data),
-    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.COURSE_EDITION_DELETE, id)
+    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.COURSE_EDITION_DELETE, id),
+    exportAttendance: (courseEditionIds) =>
+      ipcRenderer.invoke(IPC_CHANNELS.COURSE_EDITION_EXPORT_ATTENDANCE, courseEditionIds)
   },
   student: {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.STUDENT_LIST),

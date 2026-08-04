@@ -54,8 +54,9 @@ export interface AttendanceStats {
 }
 
 // Núcleo de cálculo reutilizable: recibe datos ya obtenidos (sin volver a consultar Mongo) para
-// poder reutilizarse tanto para un único alumno (kiosco) como en el resumen de toda la edición.
-function computeAttendanceStats(
+// poder reutilizarse tanto para un único alumno (kiosco), en el resumen de toda la edición, como
+// en la exportación a Excel (course-edition-export-service.ts).
+export function computeAttendanceStats(
   classSessions: ClassSession[],
   attendanceRecords: Attendance[],
   studentId: string,

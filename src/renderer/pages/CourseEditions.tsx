@@ -25,7 +25,7 @@ import { CourseEditionForm } from '../components/CourseEditionForm'
 import { EnrollmentsSection } from '../components/EnrollmentsSection'
 import { ClassSessionsSection } from '../components/ClassSessionsSection'
 import { CourseDetail } from '../components/CourseDetail'
-import { useConfirm } from '../components/ui/confirm-dialog'
+import { useAlertDialog, useConfirm } from '../components/ui/confirm-dialog'
 import { usePagination } from '../hooks/use-pagination'
 import { normalizeText, sortByDateDesc } from '../lib/utils'
 
@@ -57,11 +57,14 @@ function formatDate(date: Date): string {
 
 export function CourseEditions(): React.JSX.Element {
   const confirm = useConfirm()
+  const alertDialog = useAlertDialog()
   const [courseEditions, setCourseEditions] = useState<CourseEdition[] | null>(null)
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [courseTemplates, setCourseTemplates] = useState<CourseTemplate[]>([])
   const [mode, setMode] = useState<ViewMode>({ type: 'list' })
   const [search, setSearch] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [exporting, setExporting] = useState(false)
 
   const loadCourseEditions = useCallback(async () => {
     const data = await window.api.courseEdition.list()
@@ -110,6 +113,33 @@ export function CourseEditions(): React.JSX.Element {
     if (!(await confirm('¿Eliminar esta edición de curso?'))) return
     await window.api.courseEdition.delete(id)
     await loadCourseEditions()
+  }
+
+  function toggleSelected(id: string): void {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  async function handleExport(): Promise<void> {
+    setExporting(true)
+    try {
+      const filePath = await window.api.courseEdition.exportAttendance([...selectedIds])
+      if (filePath) {
+        setSelectedIds(new Set())
+        await alertDialog(`Archivo exportado correctamente en: ${filePath}`)
+      }
+    } catch (error) {
+      await alertDialog(error instanceof Error ? error.message : 'No se pudo exportar el archivo.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   if (mode.type === 'create') {
@@ -166,7 +196,18 @@ export function CourseEditions(): React.JSX.Element {
     <div className="space-y-6">
       <PageHeader
         title="Ediciones"
-        action={<Button onClick={() => setMode({ type: 'create' })}>Crear edición</Button>}
+        action={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              disabled={selectedIds.size === 0 || exporting}
+            >
+              {exporting ? 'Exportando...' : 'Exportar'}
+            </Button>
+            <Button onClick={() => setMode({ type: 'create' })}>Crear edición</Button>
+          </div>
+        }
       />
 
       {courseEditions === null ? (
@@ -189,6 +230,7 @@ export function CourseEditions(): React.JSX.Element {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10" />
                 <TableHead>Curso</TableHead>
                 <TableHead>Profesor</TableHead>
                 <TableHead>Fecha inicio</TableHead>
@@ -200,6 +242,15 @@ export function CourseEditions(): React.JSX.Element {
             <TableBody>
               {pagination.pageItems.map((courseEdition) => (
                 <TableRow key={courseEdition.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(courseEdition.id)}
+                      onChange={() => toggleSelected(courseEdition.id)}
+                      aria-label={`Seleccionar ${templateName(courseEdition.templateId)}`}
+                      className="size-4 rounded border-input accent-primary"
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">
                     {templateName(courseEdition.templateId)}
                   </TableCell>

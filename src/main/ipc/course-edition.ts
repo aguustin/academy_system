@@ -8,9 +8,11 @@ import {
   getCourseEditions,
   updateCourseEdition
 } from '../db/course-edition'
+import { exportCourseEditionsAttendance } from '../services/course-edition-export-service'
 import { handleAuthenticated } from '../auth/require-session'
 
 const idSchema = z.string()
+const courseEditionIdsSchema = z.array(z.string()).min(1)
 
 export function registerCourseEditionIpc(): void {
   handleAuthenticated(IPC_CHANNELS.COURSE_EDITION_CREATE, (_event, data: unknown) => {
@@ -31,5 +33,9 @@ export function registerCourseEditionIpc(): void {
 
   handleAuthenticated(IPC_CHANNELS.COURSE_EDITION_DELETE, (_event, id: unknown) => {
     return deleteCourseEdition(idSchema.parse(id))
+  })
+
+  handleAuthenticated(IPC_CHANNELS.COURSE_EDITION_EXPORT_ATTENDANCE, (_event, ids: unknown) => {
+    return exportCourseEditionsAttendance(courseEditionIdsSchema.parse(ids))
   })
 }

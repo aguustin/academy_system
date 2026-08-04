@@ -24,6 +24,7 @@ export const IPC_CHANNELS = {
   COURSE_EDITION_GET_BY_ID: 'course-edition:getById',
   COURSE_EDITION_UPDATE: 'course-edition:update',
   COURSE_EDITION_DELETE: 'course-edition:delete',
+  COURSE_EDITION_EXPORT_ATTENDANCE: 'course-edition:exportAttendance',
   STUDENT_LIST: 'student:list',
   STUDENT_GET_BY_ID: 'student:getById',
   STUDENT_FIND_BY_DNI: 'student:findByDni',
