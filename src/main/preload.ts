@@ -119,6 +119,9 @@ const api: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.COURSE_PROGRAM_OPEN, courseTemplateId),
     remove: (courseTemplateId) =>
       ipcRenderer.invoke(IPC_CHANNELS.COURSE_PROGRAM_REMOVE, courseTemplateId)
+  },
+  dashboard: {
+    getSummary: () => ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_SUMMARY)
   }
 }
 

@@ -6,7 +6,7 @@ import {
   CalendarRange,
   ClipboardList,
   GraduationCap,
-  //LayoutDashboard,
+  LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
   UserCog
@@ -22,7 +22,7 @@ export function Sidebar(): React.JSX.Element {
     user?.role === 'teacher'
       ? [{ label: 'Mis Cursos', icon: BookOpen, to: '/mis-cursos' }]
       : [
-          //{ label: 'Dashboard', icon: LayoutDashboard, to: '/' },
+          { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
           { label: 'Catálogo de Cursos', icon: BookOpen, to: '/cursos' },
           { label: 'Ediciones', icon: CalendarRange, to: '/ediciones' },
           { label: 'Asistencias', icon: ClipboardList, to: '/asistencias' },

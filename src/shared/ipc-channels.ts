@@ -59,5 +59,6 @@ export const IPC_CHANNELS = {
   CERTIFICATION_GET_STUDENT_CERTIFICATION: 'certification:getStudentCertification',
   COURSE_PROGRAM_UPLOAD: 'courseProgram:upload',
   COURSE_PROGRAM_OPEN: 'courseProgram:open',
-  COURSE_PROGRAM_REMOVE: 'courseProgram:remove'
+  COURSE_PROGRAM_REMOVE: 'courseProgram:remove',
+  DASHBOARD_GET_SUMMARY: 'dashboard:getSummary'
 } as const

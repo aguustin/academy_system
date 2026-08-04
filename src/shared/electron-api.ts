@@ -19,6 +19,7 @@ import type {
   EvaluationResults,
   EvaluationType
 } from './evaluations'
+import type { DashboardSummary } from './dashboard'
 
 export type TeacherInput = Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>
 export type CourseTemplateInput = Omit<
@@ -203,5 +204,8 @@ export interface ElectronApi {
     upload: (courseTemplateId: string) => Promise<CourseTemplate>
     open: (courseTemplateId: string) => Promise<void>
     remove: (courseTemplateId: string) => Promise<CourseTemplate>
+  }
+  dashboard: {
+    getSummary: () => Promise<DashboardSummary>
   }
 }
