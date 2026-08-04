@@ -77,7 +77,8 @@ const api: ElectronApi = {
     listByClass: (classSessionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_LIST_BY_CLASS, classSessionId),
     getSummary: (courseEditionId) =>
-      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_GET_SUMMARY, courseEditionId)
+      ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_GET_SUMMARY, courseEditionId),
+    getStudentsAtRisk: () => ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_GET_STUDENTS_AT_RISK)
   },
   classSession: {
     generate: (courseEditionId) =>

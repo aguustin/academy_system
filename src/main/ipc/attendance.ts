@@ -4,6 +4,7 @@ import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import {
   findStudentTodayClasses,
   getAttendanceSummary,
+  getStudentsAtRisk,
   listAttendanceByClass,
   registerClassAttendance,
   saveClassAttendance
@@ -14,6 +15,7 @@ import {
   findAttendanceByStudent
 } from '../db/attendance'
 import { handleAuthenticated } from '../auth/require-session'
+import { handleAdminOnly } from '../auth/require-admin'
 
 const idSchema = z.string()
 const registerClassInputSchema = z.object({
@@ -72,5 +74,9 @@ export function registerAttendanceIpc(): void {
 
   handleAuthenticated(IPC_CHANNELS.ATTENDANCE_GET_SUMMARY, (_event, courseEditionId: unknown) => {
     return getAttendanceSummary(idSchema.parse(courseEditionId))
+  })
+
+  handleAdminOnly(IPC_CHANNELS.ATTENDANCE_GET_STUDENTS_AT_RISK, () => {
+    return getStudentsAtRisk()
   })
 }

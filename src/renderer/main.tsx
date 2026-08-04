@@ -12,6 +12,7 @@ import { CourseTemplates } from './pages/CourseTemplates'
 import { CourseEditions } from './pages/CourseEditions'
 import { AttendanceRegistration } from './pages/AttendanceRegistration'
 import { AttendanceQuery } from './pages/AttendanceQuery'
+import { StudentsAtRisk } from './pages/StudentsAtRisk'
 import { Users } from './pages/Users'
 import { Students } from './pages/Students'
 import { Holidays } from './pages/Holidays'
@@ -43,6 +44,7 @@ const router = createHashRouter([
           { path: 'cursos', element: <CourseTemplates /> },
           { path: 'ediciones', element: <CourseEditions /> },
           { path: 'asistencias', element: <AttendanceQuery /> },
+          { path: 'alumnos-en-riesgo', element: <StudentsAtRisk /> },
           { path: 'mis-cursos', element: <TeacherDashboard /> },
           {
             element: <RequireAdmin />,

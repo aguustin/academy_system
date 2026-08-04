@@ -10,7 +10,8 @@ import {
   LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
-  UserCog
+  UserCog,
+  UserX
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../auth/AuthContext'
@@ -27,6 +28,7 @@ export function Sidebar(): React.JSX.Element {
           { label: 'Catálogo de Cursos', icon: BookOpen, to: '/cursos' },
           { label: 'Ediciones', icon: CalendarRange, to: '/ediciones' },
           { label: 'Asistencias', icon: ClipboardList, to: '/asistencias' },
+          { label: 'Alumnos en riesgo', icon: UserX, to: '/alumnos-en-riesgo' },
           ...(user?.role === 'admin'
             ? [
                 { label: 'Usuarios', icon: UserCog, to: '/usuarios' },

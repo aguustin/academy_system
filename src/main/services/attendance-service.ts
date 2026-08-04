@@ -10,12 +10,14 @@ import {
   type ClassAttendanceStudent,
   type FindStudentTodayClassesResult,
   type RegisterClassAttendanceResult,
+  type StudentAtRiskItem,
+  type StudentRiskLevel,
   type StudentTodayClassOption
 } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { CourseEdition } from '../../shared/courses'
 import { mongoStudentProvider } from '../providers/mongo-student-provider'
-import { findCourseEditionById } from '../db/course-edition'
+import { findCourseEditionById, getCourseEditions } from '../db/course-edition'
 import { findCourseTemplateById } from '../db/course-template'
 import { findTeacherById } from '../db/teacher'
 import { listEnrollmentsByCourseEdition, listEnrollmentsByStudent } from '../db/enrollment'
@@ -367,4 +369,60 @@ export async function getAttendanceSummary(courseEditionId: string): Promise<Att
   }))
 
   return { totalClasses, students }
+}
+
+// Se basa en usedAbsences/allowedAbsences (computeAttendanceStats), que ya excluyen las clases
+// futuras del conteo de faltas: solo importan las clases ya dictadas a la fecha de hoy.
+function resolveRiskLevel(stats: AttendanceStats): StudentRiskLevel | null {
+  if (stats.completedClasses === 0) return null
+  if (stats.usedAbsences > stats.allowedAbsences) return 'lost'
+  if (stats.remainingAbsences <= 1) return 'at-risk'
+  return null
+}
+
+export async function getStudentsAtRisk(): Promise<StudentAtRiskItem[]> {
+  const activeEditions = (await getCourseEditions()).filter(
+    (courseEdition) => courseEdition.status === 'active'
+  )
+
+  const items: StudentAtRiskItem[] = []
+
+  for (const courseEdition of activeEditions) {
+    const [classSessions, enrollments, attendanceRecords, courseTemplate] = await Promise.all([
+      listClassSessionsByEdition(courseEdition.id),
+      listEnrollmentsByCourseEdition(courseEdition.id),
+      findAttendanceByCourseEdition(courseEdition.id),
+      findCourseTemplateById(courseEdition.templateId)
+    ])
+    const courseName = courseTemplate?.name ?? courseEdition.templateId
+
+    for (const enrollment of enrollments) {
+      const student = await mongoStudentProvider.findById(enrollment.studentId)
+      if (!student) continue
+
+      const stats = computeAttendanceStats(classSessions, attendanceRecords, student.id)
+      const riskLevel = resolveRiskLevel(stats)
+      if (!riskLevel) continue
+
+      items.push({
+        studentId: student.id,
+        studentName: `${student.lastName} ${student.firstName}`,
+        dni: student.dni,
+        courseEditionId: courseEdition.id,
+        courseName,
+        riskLevel,
+        usedAbsences: stats.usedAbsences,
+        allowedAbsences: stats.allowedAbsences,
+        remainingAbsences: stats.remainingAbsences
+      })
+    }
+  }
+
+  items.sort(
+    (a, b) =>
+      a.courseName.localeCompare(b.courseName, 'es') ||
+      a.studentName.localeCompare(b.studentName, 'es')
+  )
+
+  return items
 }

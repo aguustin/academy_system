@@ -43,6 +43,7 @@ export const IPC_CHANNELS = {
   ATTENDANCE_SAVE_CLASS_ATTENDANCE: 'attendance:saveClassAttendance',
   ATTENDANCE_LIST_BY_CLASS: 'attendance:listByClass',
   ATTENDANCE_GET_SUMMARY: 'attendance:getSummary',
+  ATTENDANCE_GET_STUDENTS_AT_RISK: 'attendance:getStudentsAtRisk',
   CLASS_SESSION_GENERATE: 'classSession:generate',
   CLASS_SESSION_LIST_BY_EDITION: 'classSession:listByEdition',
   CLASS_SESSION_CANCEL: 'classSession:cancel',

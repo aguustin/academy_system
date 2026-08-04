@@ -90,3 +90,19 @@ export interface AttendanceSummary {
   totalClasses: number
   students: AttendanceSummaryStudent[]
 }
+
+// 'lost': ya superó las faltas permitidas contando solo clases ya dictadas (perdió la regularidad).
+// 'at-risk': todavía cumple, pero le queda 0 o 1 falta disponible antes de perderla.
+export type StudentRiskLevel = 'lost' | 'at-risk'
+
+export interface StudentAtRiskItem {
+  studentId: string
+  studentName: string
+  dni: string
+  courseEditionId: string
+  courseName: string
+  riskLevel: StudentRiskLevel
+  usedAbsences: number
+  allowedAbsences: number
+  remainingAbsences: number
+}

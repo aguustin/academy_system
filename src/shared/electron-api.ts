@@ -8,7 +8,8 @@ import type {
   ClassAttendanceEntry,
   ClassAttendanceStudent,
   FindStudentTodayClassesResult,
-  RegisterClassAttendanceResult
+  RegisterClassAttendanceResult,
+  StudentAtRiskItem
 } from './attendance'
 import type { AuthUser, LoginResult } from './auth'
 import type { User, UserRole } from './users'
@@ -172,6 +173,7 @@ export interface ElectronApi {
     ) => Promise<ClassAttendanceStudent[]>
     listByClass: (classSessionId: string) => Promise<ClassAttendanceStudent[]>
     getSummary: (courseEditionId: string) => Promise<AttendanceSummary>
+    getStudentsAtRisk: () => Promise<StudentAtRiskItem[]>
   }
   classSession: {
     generate: (courseEditionId: string) => Promise<GenerateClassSessionsResult>
