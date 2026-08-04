@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import {
   // BarChart3,
   BookOpen,
+  CalendarOff,
   CalendarRange,
   ClipboardList,
   GraduationCap,
@@ -29,7 +30,8 @@ export function Sidebar(): React.JSX.Element {
           ...(user?.role === 'admin'
             ? [
                 { label: 'Usuarios', icon: UserCog, to: '/usuarios' },
-                { label: 'Alumnos', icon: GraduationCap, to: '/alumnos' }
+                { label: 'Alumnos', icon: GraduationCap, to: '/alumnos' },
+                { label: 'Feriados', icon: CalendarOff, to: '/feriados' }
               ]
             : [])
           // { label: 'Reportes', icon: BarChart3 }

@@ -45,3 +45,7 @@ export async function findClassSessionById(id: string): Promise<ClassSession | n
   const doc = await ClassSessionModel.findById(id)
   return doc ? toClassSession(doc) : null
 }
+
+export async function deleteClassSession(id: string): Promise<void> {
+  await ClassSessionModel.findByIdAndDelete(id)
+}

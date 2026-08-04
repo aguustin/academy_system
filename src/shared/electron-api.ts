@@ -20,6 +20,7 @@ import type {
   EvaluationType
 } from './evaluations'
 import type { DashboardSummary } from './dashboard'
+import type { Holiday, HolidayInput } from './holidays'
 
 export type TeacherInput = Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>
 export type CourseTemplateInput = Omit<
@@ -175,6 +176,12 @@ export interface ElectronApi {
   classSession: {
     generate: (courseEditionId: string) => Promise<GenerateClassSessionsResult>
     listByEdition: (courseEditionId: string) => Promise<ClassSession[]>
+    cancel: (classSessionId: string) => Promise<void>
+  }
+  holiday: {
+    list: () => Promise<Holiday[]>
+    create: (data: HolidayInput) => Promise<Holiday>
+    delete: (id: string) => Promise<void>
   }
   teacherCourse: {
     listMyCourses: () => Promise<TeacherCourseSummary[]>

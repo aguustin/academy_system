@@ -83,7 +83,14 @@ const api: ElectronApi = {
     generate: (courseEditionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_GENERATE, courseEditionId),
     listByEdition: (courseEditionId) =>
-      ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_LIST_BY_EDITION, courseEditionId)
+      ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_LIST_BY_EDITION, courseEditionId),
+    cancel: (classSessionId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_CANCEL, classSessionId)
+  },
+  holiday: {
+    list: () => ipcRenderer.invoke(IPC_CHANNELS.HOLIDAY_LIST),
+    create: (data) => ipcRenderer.invoke(IPC_CHANNELS.HOLIDAY_CREATE, data),
+    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.HOLIDAY_DELETE, id)
   },
   teacherCourse: {
     listMyCourses: () => ipcRenderer.invoke(IPC_CHANNELS.TEACHER_COURSE_LIST_MY_COURSES),

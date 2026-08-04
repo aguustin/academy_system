@@ -3,8 +3,12 @@ import type { DayOfWeek, Schedule } from '../../shared/courses'
 import { findCourseEditionById } from '../db/course-edition'
 import {
   createClassSessions as createClassSessionsInDb,
+  deleteClassSession as deleteClassSessionInDb,
+  findClassSessionById,
   listClassSessionsByEdition as listClassSessionsByEditionInDb
 } from '../db/class-session'
+import { listHolidays } from '../db/holiday'
+import { findAttendanceByClassSession } from '../db/attendance'
 
 const DAYS_OF_WEEK: DayOfWeek[] = [
   'sunday',
@@ -26,10 +30,15 @@ function toLocalDateOnly(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
+function toDateKey(date: Date): string {
+  return toLocalDateOnly(date).toISOString().slice(0, 10)
+}
+
 function calculateSessionDates(
   startDate: Date,
   endDate: Date,
-  schedules: Schedule[]
+  schedules: Schedule[],
+  holidayDates: Set<string>
 ): SessionDate[] {
   const schedulesByDay = new Map<DayOfWeek, Schedule[]>()
   for (const schedule of schedules) {
@@ -47,6 +56,9 @@ function calculateSessionDates(
     current <= end;
     current = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1)
   ) {
+    // Un feriado no mueve la clase a otro día: directamente no se genera esa fecha.
+    if (holidayDates.has(toDateKey(current))) continue
+
     const matchingSchedules = schedulesByDay.get(DAYS_OF_WEEK[current.getDay()]) ?? []
     for (const schedule of matchingSchedules) {
       sessions.push({
@@ -73,10 +85,14 @@ export async function generateClassSessions(
     throw new Error('Edición no encontrada')
   }
 
+  const holidays = await listHolidays()
+  const holidayDates = new Set(holidays.map((holiday) => toDateKey(holiday.date)))
+
   const sessionDates = calculateSessionDates(
     courseEdition.startDate,
     courseEdition.endDate,
-    courseEdition.schedules
+    courseEdition.schedules,
+    holidayDates
   )
   const sessions = await createClassSessionsInDb(
     sessionDates.map((sessionDate) => ({ courseEditionId, ...sessionDate }))
@@ -87,4 +103,20 @@ export async function generateClassSessions(
 
 export function listClassSessionsByEdition(courseEditionId: string): Promise<ClassSession[]> {
   return listClassSessionsByEditionInDb(courseEditionId)
+}
+
+// Único mecanismo para cancelar una clase puntual: sirve tanto para cancelaciones manuales
+// ad-hoc como para el caso de un feriado cargado después de generar las clases (no se borra
+// la fecha automáticamente, ver calculateSessionDates). Se bloquea si ya hay asistencia
+// registrada para no perder información histórica.
+export async function cancelClassSession(id: string): Promise<void> {
+  const classSession = await findClassSessionById(id)
+  if (!classSession) {
+    throw new Error('Clase no encontrada')
+  }
+  const attendanceRecords = await findAttendanceByClassSession(id)
+  if (attendanceRecords.length > 0) {
+    throw new Error('No se puede cancelar una clase que ya tiene asistencia registrada')
+  }
+  await deleteClassSessionInDb(id)
 }

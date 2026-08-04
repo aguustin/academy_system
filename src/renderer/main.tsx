@@ -14,6 +14,7 @@ import { AttendanceRegistration } from './pages/AttendanceRegistration'
 import { AttendanceQuery } from './pages/AttendanceQuery'
 import { Users } from './pages/Users'
 import { Students } from './pages/Students'
+import { Holidays } from './pages/Holidays'
 import { TeacherDashboard } from './pages/TeacherDashboard'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
@@ -47,7 +48,8 @@ const router = createHashRouter([
             element: <RequireAdmin />,
             children: [
               { path: 'usuarios', element: <Users /> },
-              { path: 'alumnos', element: <Students /> }
+              { path: 'alumnos', element: <Students /> },
+              { path: 'feriados', element: <Holidays /> }
             ]
           }
         ]
