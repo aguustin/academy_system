@@ -1,4 +1,8 @@
-import type { ClassSession, GenerateClassSessionsResult } from '../../shared/class-sessions'
+import type {
+  AddClassSessionInput,
+  ClassSession,
+  GenerateClassSessionsResult
+} from '../../shared/class-sessions'
 import type { DayOfWeek, Schedule } from '../../shared/courses'
 import { findCourseEditionById } from '../db/course-edition'
 import {
@@ -30,6 +34,15 @@ function toLocalDateOnly(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
+// CourseEdition.startDate/endDate se arman en el formulario a partir de un <input type="date">
+// (`new Date("YYYY-MM-DD")`), que JS interpreta como medianoche UTC. En husos horarios negativos
+// (ej. Argentina) los getters locales de esa fecha caen un día antes del día calendario elegido
+// por el usuario. Se leen con getters UTC para recuperar el día real, y se representan en
+// medianoche local para poder compararlas con `current` (construido en hora local dentro del loop).
+function toUtcDateOnly(date: Date): Date {
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+}
+
 function toDateKey(date: Date): string {
   return toLocalDateOnly(date).toISOString().slice(0, 10)
 }
@@ -48,8 +61,8 @@ function calculateSessionDates(
   }
 
   const sessions: SessionDate[] = []
-  const start = toLocalDateOnly(startDate)
-  const end = toLocalDateOnly(endDate)
+  const start = toUtcDateOnly(startDate)
+  const end = toUtcDateOnly(endDate)
 
   for (
     let current = start;
@@ -103,6 +116,21 @@ export async function generateClassSessions(
 
 export function listClassSessionsByEdition(courseEditionId: string): Promise<ClassSession[]> {
   return listClassSessionsByEditionInDb(courseEditionId)
+}
+
+// Complemento manual de "Generar clases": cubre tanto el caso general (agregar una fecha que
+// haga falta) como el de ediciones que ya generaron sus clases con el rango recortado por el
+// bug de fechas ya corregido (no se recalculan retroactivamente, ver calculateSessionDates).
+// No hace falta propagar nada más: las estadísticas de asistencia (computeAttendanceStats) y
+// todo lo que depende de ellas se recalculan siempre a partir de las clases existentes en ese
+// momento, así que la nueva fecha queda reflejada automáticamente en cuanto se guarda.
+export async function addClassSession(data: AddClassSessionInput): Promise<ClassSession> {
+  const courseEdition = await findCourseEditionById(data.courseEditionId)
+  if (!courseEdition) {
+    throw new Error('Edición no encontrada')
+  }
+  const [session] = await createClassSessionsInDb([data])
+  return session
 }
 
 // Único mecanismo para cancelar una clase puntual: sirve tanto para cancelaciones manuales

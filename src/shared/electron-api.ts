@@ -13,7 +13,11 @@ import type {
 } from './attendance'
 import type { AuthUser, LoginResult } from './auth'
 import type { User, UserRole } from './users'
-import type { ClassSession, GenerateClassSessionsResult } from './class-sessions'
+import type {
+  AddClassSessionInput,
+  ClassSession,
+  GenerateClassSessionsResult
+} from './class-sessions'
 import type {
   Evaluation,
   EvaluationResultEntry,
@@ -180,6 +184,7 @@ export interface ElectronApi {
     generate: (courseEditionId: string) => Promise<GenerateClassSessionsResult>
     listByEdition: (courseEditionId: string) => Promise<ClassSession[]>
     cancel: (classSessionId: string) => Promise<void>
+    add: (data: AddClassSessionInput) => Promise<ClassSession>
   }
   holiday: {
     list: () => Promise<Holiday[]>

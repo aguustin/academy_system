@@ -47,6 +47,7 @@ export const IPC_CHANNELS = {
   CLASS_SESSION_GENERATE: 'classSession:generate',
   CLASS_SESSION_LIST_BY_EDITION: 'classSession:listByEdition',
   CLASS_SESSION_CANCEL: 'classSession:cancel',
+  CLASS_SESSION_ADD: 'classSession:add',
   HOLIDAY_LIST: 'holiday:list',
   HOLIDAY_CREATE: 'holiday:create',
   HOLIDAY_DELETE: 'holiday:delete',

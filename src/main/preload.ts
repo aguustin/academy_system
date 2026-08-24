@@ -86,7 +86,8 @@ const api: ElectronApi = {
     listByEdition: (courseEditionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_LIST_BY_EDITION, courseEditionId),
     cancel: (classSessionId) =>
-      ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_CANCEL, classSessionId)
+      ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_CANCEL, classSessionId),
+    add: (data) => ipcRenderer.invoke(IPC_CHANNELS.CLASS_SESSION_ADD, data)
   },
   holiday: {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.HOLIDAY_LIST),

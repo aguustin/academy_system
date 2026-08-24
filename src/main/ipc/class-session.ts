@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
+import { addClassSessionInputSchema } from '../../shared/class-sessions'
 import {
+  addClassSession,
   cancelClassSession,
   generateClassSessions,
   listClassSessionsByEdition
@@ -24,5 +26,9 @@ export function registerClassSessionIpc(): void {
 
   handleAdminOnly(IPC_CHANNELS.CLASS_SESSION_CANCEL, (_event, classSessionId: unknown) => {
     return cancelClassSession(idSchema.parse(classSessionId))
+  })
+
+  handleAdminOnly(IPC_CHANNELS.CLASS_SESSION_ADD, (_event, data: unknown) => {
+    return addClassSession(addClassSessionInputSchema.parse(data))
   })
 }

@@ -34,3 +34,12 @@ export function sortByDateDesc<T>(items: T[], getDate: (item: T) => Date): T[] {
 export function sortByField<T>(items: T[], getField: (item: T) => string): T[] {
   return [...items].sort((a, b) => getField(a).localeCompare(getField(b), 'es'))
 }
+
+// Un <input type="date"> da "YYYY-MM-DD"; `new Date(...)` de ese string lo interpreta como
+// medianoche UTC, que en husos horarios negativos (ej. Argentina) cae en el día calendario
+// anterior en hora local. Se arma la fecha a mano en hora local para que coincida con el
+// mismo día que las fechas de las clases (ver toUtcDateOnly en class-session-service.ts).
+export function parseDateInput(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
