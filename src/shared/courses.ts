@@ -42,6 +42,9 @@ export const courseEditionSchema = z.object({
   endDate: z.date(),
   schedules: z.array(scheduleSchema),
   status: courseEditionStatusSchema,
+  // Porcentaje mínimo de asistencia para aprobar esta edición puntual (antes era un valor único
+  // para todo el sistema). Se define al crear la edición y puede modificarse después.
+  minimumAttendancePercentage: z.number().min(0).max(100),
   createdAt: z.date(),
   updatedAt: z.date()
 })

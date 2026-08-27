@@ -10,6 +10,7 @@ import {
   type DayOfWeek,
   type Schedule
 } from '../../shared/courses'
+import { DEFAULT_MINIMUM_ATTENDANCE_PERCENTAGE } from '../../shared/attendance'
 import type { Teacher } from '../../shared/teachers'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -63,6 +64,9 @@ export function CourseEditionForm({
     initialValues ? toDateInputValue(initialValues.endDate) : ''
   )
   const [status, setStatus] = useState<CourseEditionStatus>(initialValues?.status ?? 'upcoming')
+  const [minimumAttendancePercentage, setMinimumAttendancePercentage] = useState(
+    initialValues?.minimumAttendancePercentage ?? DEFAULT_MINIMUM_ATTENDANCE_PERCENTAGE
+  )
   const [schedules, setSchedules] = useState<Schedule[]>(initialValues?.schedules ?? [])
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -90,7 +94,8 @@ export function CourseEditionForm({
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       schedules,
-      status
+      status,
+      minimumAttendancePercentage
     })
 
     if (!result.success) {
@@ -182,6 +187,22 @@ export function CourseEditionForm({
               </option>
             ))}
           </Select>
+        </FormField>
+
+        <FormField
+          label="Porcentaje mínimo de asistencia"
+          htmlFor="minimumAttendancePercentage"
+          error={errors.minimumAttendancePercentage}
+        >
+          <Input
+            id="minimumAttendancePercentage"
+            type="number"
+            min={0}
+            max={100}
+            required
+            value={minimumAttendancePercentage}
+            onChange={(event) => setMinimumAttendancePercentage(Number(event.target.value))}
+          />
         </FormField>
 
         <div className="flex flex-col gap-2">

@@ -120,7 +120,12 @@ export async function exportCourseEditionsAttendance(
     for (const student of students) {
       // usedAbsences ya calcula las faltas solo sobre las clases con fecha anterior o igual a
       // "hoy" (el momento de la exportación), sin contar clases futuras que todavía no pasaron.
-      const stats = computeAttendanceStats(classSessions, attendanceRecords, student.id)
+      const stats = computeAttendanceStats(
+        classSessions,
+        attendanceRecords,
+        student.id,
+        courseEdition.minimumAttendancePercentage
+      )
       worksheet.addRow([
         student.lastName,
         student.firstName,

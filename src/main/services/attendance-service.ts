@@ -1,5 +1,4 @@
 import {
-  MINIMUM_ATTENDANCE_PERCENTAGE,
   type Attendance,
   type AttendanceFeedback,
   type AttendanceFeedbackType,
@@ -57,11 +56,13 @@ export interface AttendanceStats {
 
 // Núcleo de cálculo reutilizable: recibe datos ya obtenidos (sin volver a consultar Mongo) para
 // poder reutilizarse tanto para un único alumno (kiosco), en el resumen de toda la edición, como
-// en la exportación a Excel (course-edition-export-service.ts).
+// en la exportación a Excel (course-edition-export-service.ts). El porcentaje mínimo es propio
+// de cada CourseEdition (minimumAttendancePercentage), no un valor único para todo el sistema.
 export function computeAttendanceStats(
   classSessions: ClassSession[],
   attendanceRecords: Attendance[],
   studentId: string,
+  minimumAttendancePercentage: number,
   today: Date = new Date()
 ): AttendanceStats {
   const totalClasses = classSessions.length
@@ -74,7 +75,7 @@ export function computeAttendanceStats(
     (record) => record.studentId === studentId && record.status === 'present'
   ).length
 
-  const allowedAbsences = Math.floor(totalClasses * (1 - MINIMUM_ATTENDANCE_PERCENTAGE / 100))
+  const allowedAbsences = Math.floor(totalClasses * (1 - minimumAttendancePercentage / 100))
   const usedAbsences = Math.max(0, completedClasses - attendanceCount)
   const remainingAbsences = Math.max(0, allowedAbsences - usedAbsences)
   const attendancePercentage =
@@ -88,7 +89,7 @@ export function computeAttendanceStats(
     usedAbsences,
     remainingAbsences,
     attendancePercentage,
-    meetsAttendanceRequirement: attendancePercentage >= MINIMUM_ATTENDANCE_PERCENTAGE
+    meetsAttendanceRequirement: attendancePercentage >= minimumAttendancePercentage
   }
 }
 
@@ -98,11 +99,20 @@ export async function getStudentAttendanceStats(
   courseEditionId: string,
   studentId: string
 ): Promise<AttendanceStats> {
-  const [classSessions, attendanceRecords] = await Promise.all([
+  const [classSessions, attendanceRecords, courseEdition] = await Promise.all([
     listClassSessionsByEdition(courseEditionId),
-    findAttendanceByCourseEdition(courseEditionId)
+    findAttendanceByCourseEdition(courseEditionId),
+    findCourseEditionById(courseEditionId)
   ])
-  return computeAttendanceStats(classSessions, attendanceRecords, studentId)
+  if (!courseEdition) {
+    throw new Error('Edición no encontrada')
+  }
+  return computeAttendanceStats(
+    classSessions,
+    attendanceRecords,
+    studentId,
+    courseEdition.minimumAttendancePercentage
+  )
 }
 
 function buildAttendanceFeedback(stats: AttendanceStats): AttendanceFeedback {
@@ -337,7 +347,12 @@ export async function getAttendanceSummary(courseEditionId: string): Promise<Att
           present: byClass?.get(classSession.id) === 'present'
         }))
 
-        const stats = computeAttendanceStats(classSessions, attendanceRecords, student.id)
+        const stats = computeAttendanceStats(
+          classSessions,
+          attendanceRecords,
+          student.id,
+          courseEdition.minimumAttendancePercentage
+        )
 
         return {
           studentId: student.id,
@@ -400,7 +415,12 @@ export async function getStudentsAtRisk(): Promise<StudentAtRiskItem[]> {
       const student = await mongoStudentProvider.findById(enrollment.studentId)
       if (!student) continue
 
-      const stats = computeAttendanceStats(classSessions, attendanceRecords, student.id)
+      const stats = computeAttendanceStats(
+        classSessions,
+        attendanceRecords,
+        student.id,
+        courseEdition.minimumAttendancePercentage
+      )
       const riskLevel = resolveRiskLevel(stats)
       if (!riskLevel) continue
 

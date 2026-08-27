@@ -5,6 +5,7 @@ import {
   type CourseEdition,
   type Schedule
 } from '../../shared/courses'
+import { DEFAULT_MINIMUM_ATTENDANCE_PERCENTAGE } from '../../shared/attendance'
 
 type CourseEditionDocument = Omit<CourseEdition, 'id'>
 
@@ -25,6 +26,11 @@ const courseEditionSchema = new Schema<CourseEditionDocument>(
     endDate: { type: Date, required: true },
     schedules: { type: [scheduleSchema], required: true },
     status: { type: String, enum: courseEditionStatusSchema.options, required: true },
+    minimumAttendancePercentage: {
+      type: Number,
+      required: true,
+      default: DEFAULT_MINIMUM_ATTENDANCE_PERCENTAGE
+    },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true }
   },
@@ -42,6 +48,7 @@ function toCourseEdition(doc: HydratedDocument<CourseEditionDocument>): CourseEd
     endDate,
     schedules,
     status,
+    minimumAttendancePercentage,
     createdAt,
     updatedAt
   } = doc
@@ -57,6 +64,10 @@ function toCourseEdition(doc: HydratedDocument<CourseEditionDocument>): CourseEd
       endTime: schedule.endTime
     })),
     status,
+    // El default de Mongoose solo aplica a documentos nuevos: las ediciones guardadas antes de
+    // este campo no lo tienen almacenado y se leen como undefined, así que se respalda acá.
+    minimumAttendancePercentage:
+      minimumAttendancePercentage ?? DEFAULT_MINIMUM_ATTENDANCE_PERCENTAGE,
     createdAt,
     updatedAt
   }

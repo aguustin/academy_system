@@ -2,11 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { z } from 'zod'
 import { CalendarCheck, ClipboardCheck, FileText, Users } from 'lucide-react'
 import type { TeacherCourseDetail } from '../../shared/electron-api'
-import {
-  MINIMUM_ATTENDANCE_PERCENTAGE,
-  type AttendanceSummary,
-  type ClassAttendanceStudent
-} from '../../shared/attendance'
+import type { AttendanceSummary, ClassAttendanceStudent } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { DayOfWeek } from '../../shared/courses'
 import {
@@ -662,7 +658,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                     ))}
                     <TableHead className="text-center">Total</TableHead>
                     <TableHead className="text-center">%</TableHead>
-                    <TableHead className="text-center">{MINIMUM_ATTENDANCE_PERCENTAGE}%</TableHead>
+                    <TableHead className="text-center">
+                      {detail.courseEdition.minimumAttendancePercentage}%
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

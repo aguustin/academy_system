@@ -1,4 +1,3 @@
-import { MINIMUM_ATTENDANCE_PERCENTAGE } from '../../shared/attendance'
 import type {
   StudentCertification,
   StudentCertificationEvaluation
@@ -33,7 +32,8 @@ export async function getStudentCertification(
   )
   const attendancePercentage = studentAttendance?.attendancePercentage ?? 0
   const attendanceCount = studentAttendance?.attendanceCount ?? 0
-  const attendanceApproved = attendancePercentage >= MINIMUM_ATTENDANCE_PERCENTAGE
+  const attendanceApproved =
+    attendancePercentage >= detail.courseEdition.minimumAttendancePercentage
 
   const evaluationDetails: StudentCertificationEvaluation[] = await Promise.all(
     evaluations.map(async (evaluation) => {

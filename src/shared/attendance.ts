@@ -1,10 +1,11 @@
 import { z } from 'zod'
 import { timeSchema } from './time'
 
-// Fuente única de verdad para el porcentaje mínimo de asistencia requerido para conservar
-// la regularidad de un curso. Toda la lógica de cálculo (kiosco, resumen, certificación)
-// debe leer este valor en lugar de repetir el número.
-export const MINIMUM_ATTENDANCE_PERCENTAGE = 70
+// El porcentaje mínimo de asistencia ahora es una propiedad de cada CourseEdition
+// (minimumAttendancePercentage), no un valor único para todo el sistema. Esta constante solo
+// sirve como valor por defecto al crear una edición nueva y como respaldo para ediciones
+// guardadas antes de que el campo existiera (ver toCourseEdition en db/course-edition.ts).
+export const DEFAULT_MINIMUM_ATTENDANCE_PERCENTAGE = 70
 
 export const attendanceStatusSchema = z.enum(['present', 'absent', 'justified'])
 export type AttendanceStatus = z.infer<typeof attendanceStatusSchema>
