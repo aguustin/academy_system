@@ -6,6 +6,7 @@ import {
   CalendarOff,
   CalendarRange,
   ClipboardList,
+  DatabaseBackup,
   GraduationCap,
   LayoutDashboard,
   PanelLeftClose,
@@ -33,7 +34,8 @@ export function Sidebar(): React.JSX.Element {
             ? [
                 { label: 'Usuarios', icon: UserCog, to: '/usuarios' },
                 { label: 'Alumnos', icon: GraduationCap, to: '/alumnos' },
-                { label: 'Feriados', icon: CalendarOff, to: '/feriados' }
+                { label: 'Feriados', icon: CalendarOff, to: '/feriados' },
+                { label: 'Backup', icon: DatabaseBackup, to: '/backup' }
               ]
             : [])
           // { label: 'Reportes', icon: BarChart3 }

@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { z } from 'zod'
 import { CalendarCheck, ClipboardCheck, FileText, Users } from 'lucide-react'
-import type { TeacherCourseDetail } from '../../shared/electron-api'
-import type { AttendanceSummary, ClassAttendanceStudent } from '../../shared/attendance'
+import type { CourseEditionAcademicSummary, TeacherCourseDetail } from '../../shared/electron-api'
+import type { ClassAttendanceStudent } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { DayOfWeek } from '../../shared/courses'
 import {
@@ -10,6 +10,8 @@ import {
   evaluationSchema,
   evaluationStatusFromGrade,
   evaluationTypeSchema,
+  formatFinalGradeDisplay,
+  type AcademicStatus,
   type Evaluation,
   type EvaluationResultStatus,
   type EvaluationResultStudent,
@@ -30,6 +32,7 @@ import {
   normalizeText,
   sortByDateDesc,
   sortByField,
+  parseGradeInput,
   sortByName,
   stripTimestampPrefix
 } from '../lib/utils'
@@ -51,6 +54,18 @@ const EVALUATION_TYPE_LABELS: Record<EvaluationType, string> = {
   final: 'Final'
 }
 
+const ACADEMIC_STATUS_LABELS: Record<AcademicStatus, string> = {
+  approved: 'APROBADO',
+  failed: 'DESAPROBADO',
+  'in-progress': 'EN CURSADO'
+}
+
+const ACADEMIC_STATUS_VARIANT: Record<AcademicStatus, 'success' | 'destructive' | 'secondary'> = {
+  approved: 'success',
+  failed: 'destructive',
+  'in-progress': 'secondary'
+}
+
 const RESULT_STATUS_LABELS: Record<EvaluationResultStatus, string> = {
   'not-evaluated': 'Sin evaluar',
   passed: 'Aprobado',
@@ -70,7 +85,7 @@ function gradeFieldError(grade: number | null): string | null {
   if (grade === null) return null
   return evaluationGradeSchema.safeParse(grade).success
     ? null
-    : 'La nota debe ser un número entero entre 1 y 10'
+    : 'La nota debe ser un número entre 0 y 10'
 }
 
 function formatDate(date: Date): string {
@@ -289,7 +304,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   const [roster, setRoster] = useState<ClassAttendanceStudent[] | null>(null)
   const [saving, setSaving] = useState(false)
   const [savedMessage, setSavedMessage] = useState<string | null>(null)
-  const [summary, setSummary] = useState<AttendanceSummary | null>(null)
+  const [summary, setSummary] = useState<CourseEditionAcademicSummary | null>(null)
   const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>({ type: 'closed' })
   const [evaluations, setEvaluations] = useState<Evaluation[] | null>(null)
   const [results, setResults] = useState<EvaluationResultStudent[] | null>(null)
@@ -318,7 +333,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
     setSavedMessage(null)
     setSummary(null)
     setAttendanceMode({ type: 'summary' })
-    const data = await window.api.attendance.getSummary(courseEditionId)
+    const data = await window.api.certification.getCourseEditionSummary(courseEditionId)
     setSummary(data)
   }
 
@@ -410,7 +425,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
       (current) =>
         current?.map((student) => {
           if (student.studentId !== studentId) return student
-          const grade = rawValue === '' ? null : Number(rawValue)
+          const grade = rawValue === '' ? null : parseGradeInput(rawValue)
           return { ...student, grade, status: evaluationStatusFromGrade(grade) }
         }) ?? null
     )
@@ -658,9 +673,8 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                     ))}
                     <TableHead className="text-center">Total</TableHead>
                     <TableHead className="text-center">%</TableHead>
-                    <TableHead className="text-center">
-                      {detail.courseEdition.minimumAttendancePercentage}%
-                    </TableHead>
+                    <TableHead className="text-center">Nota final</TableHead>
+                    <TableHead className="text-center">Estado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -675,7 +689,12 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                       <TableCell className="text-center">{student.attendanceCount}</TableCell>
                       <TableCell className="text-center">{student.attendancePercentage}%</TableCell>
                       <TableCell className="text-center">
-                        {student.meetsAttendanceRequirement ? '✅' : '❌'}
+                        {formatFinalGradeDisplay(student.finalEvaluation)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={ACADEMIC_STATUS_VARIANT[student.academicStatus]}>
+                          {ACADEMIC_STATUS_LABELS[student.academicStatus]}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -837,10 +856,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            min={1}
-                            max={10}
-                            step={1}
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0-10"
                             value={student.grade ?? ''}
                             onChange={(event) =>
                               setResultGrade(student.studentId, event.target.value)

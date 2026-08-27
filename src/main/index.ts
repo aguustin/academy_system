@@ -17,6 +17,7 @@ import { registerCourseProgramIpc } from './ipc/course-program'
 import { registerDashboardIpc } from './ipc/dashboard'
 import { registerHolidayIpc } from './ipc/holiday'
 import { registerSearchIpc } from './ipc/search'
+import { registerBackupIpc } from './ipc/backup'
 import { connectToDatabase } from './db/connection'
 
 const resolvePath = (path: string): string => fileURLToPath(new URL(path, import.meta.url))
@@ -69,6 +70,7 @@ app.whenReady().then(() => {
   registerDashboardIpc()
   registerHolidayIpc()
   registerSearchIpc()
+  registerBackupIpc()
   createMainWindow()
 
   connectToDatabase()

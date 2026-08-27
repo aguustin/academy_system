@@ -16,7 +16,7 @@ export const evaluationSchema = z.object({
 })
 export type Evaluation = z.infer<typeof evaluationSchema>
 
-export const evaluationGradeSchema = z.number().int().min(1).max(10)
+export const evaluationGradeSchema = z.number().min(0).max(10)
 
 export const studentEvaluationSchema = z.object({
   id: z.string(),
@@ -53,4 +53,22 @@ export interface EvaluationResultStudent {
 export interface EvaluationResults {
   evaluation: Evaluation
   students: EvaluationResultStudent[]
+}
+
+// Situación académica de un alumno en una edición: ver certification-service.ts para las
+// reglas exactas (asistencia + promedio de proceso + nota final).
+export type AcademicStatus = 'approved' | 'failed' | 'in-progress'
+
+export interface FinalEvaluationInfo {
+  id: string
+  name: string
+  grade: number | null
+}
+
+// Texto para columnas/celdas de solo lectura (tabla de asistencias, Excel). No es una regla de
+// negocio: solo traduce la ausencia/presencia de nota a un texto fijo.
+export function formatFinalGradeDisplay(finalEvaluation: FinalEvaluationInfo | null): string {
+  if (finalEvaluation === null) return 'No creada'
+  if (finalEvaluation.grade === null) return 'Pendiente'
+  return String(finalEvaluation.grade)
 }

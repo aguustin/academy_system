@@ -361,6 +361,8 @@ export async function getAttendanceSummary(courseEditionId: string): Promise<Att
           attendanceCount: stats.attendanceCount,
           attendancePercentage: stats.attendancePercentage,
           meetsAttendanceRequirement: stats.meetsAttendanceRequirement,
+          usedAbsences: stats.usedAbsences,
+          allowedAbsences: stats.allowedAbsences,
           attendance
         }
       })
@@ -380,6 +382,8 @@ export async function getAttendanceSummary(courseEditionId: string): Promise<Att
     attendanceCount: draft.attendanceCount,
     attendancePercentage: draft.attendancePercentage,
     meetsAttendanceRequirement: draft.meetsAttendanceRequirement,
+    usedAbsences: draft.usedAbsences,
+    allowedAbsences: draft.allowedAbsences,
     attendance: draft.attendance
   }))
 

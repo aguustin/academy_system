@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog } from 'electron'
 import ExcelJS from 'exceljs'
+import { formatFinalGradeDisplay } from '../../shared/evaluations'
 import { findCourseEditionById } from '../db/course-edition'
 import { findCourseTemplateById } from '../db/course-template'
 import { listEnrollmentsByCourseEdition } from '../db/enrollment'
@@ -7,6 +8,11 @@ import { findAttendanceByCourseEdition } from '../db/attendance'
 import { mongoStudentProvider } from '../providers/mongo-student-provider'
 import { listClassSessionsByEdition } from './class-session-service'
 import { computeAttendanceStats } from './attendance-service'
+import {
+  computeAcademicSummary,
+  extractStudentGrades,
+  loadEditionEvaluationData
+} from './certification-service'
 
 const SHEET_NAME_MAX_LENGTH = 31
 // Cuántos caracteres del final del nombre se preservan siempre al recortar: ahí suelen ir los
@@ -86,6 +92,8 @@ export async function exportCourseEditionsAttendance(
       { width: 14 },
       { width: 14 },
       { width: 14 },
+      { width: 12 },
+      { width: 16 },
       { width: 12 }
     ]
     worksheet.addRow([`Edición: ${editionName}`])
@@ -96,14 +104,17 @@ export async function exportCourseEditionsAttendance(
       'DNI',
       'Clases totales',
       'Asistencias',
-      'Inasistencias'
+      'Inasistencias',
+      'Notas de proceso',
+      'Nota final'
     ])
     headerRow.font = { bold: true }
 
-    const [enrollments, classSessions, attendanceRecords] = await Promise.all([
+    const [enrollments, classSessions, attendanceRecords, evaluationData] = await Promise.all([
       listEnrollmentsByCourseEdition(courseEditionId),
       listClassSessionsByEdition(courseEditionId),
-      findAttendanceByCourseEdition(courseEditionId)
+      findAttendanceByCourseEdition(courseEditionId),
+      loadEditionEvaluationData(courseEditionId)
     ])
 
     const students = (
@@ -126,13 +137,28 @@ export async function exportCourseEditionsAttendance(
         student.id,
         courseEdition.minimumAttendancePercentage
       )
+      const { processGrades, finalEvaluationGrade, finalEvaluation } = extractStudentGrades(
+        evaluationData,
+        student.id
+      )
+      const { processAverageGrade } = computeAcademicSummary({
+        attendancePercentage: stats.attendancePercentage,
+        attendanceIrrecoverable: stats.usedAbsences > stats.allowedAbsences,
+        minimumAttendancePercentage: courseEdition.minimumAttendancePercentage,
+        courseEditionFinished: courseEdition.status === 'finished',
+        processGrades,
+        finalEvaluationGrade
+      })
+
       worksheet.addRow([
         student.lastName,
         student.firstName,
         student.dni,
         stats.totalClasses,
         stats.attendanceCount,
-        stats.usedAbsences
+        stats.usedAbsences,
+        processAverageGrade ?? '—',
+        formatFinalGradeDisplay(finalEvaluation)
       ])
     }
   }

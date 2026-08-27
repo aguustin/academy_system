@@ -16,6 +16,7 @@ import { StudentsAtRisk } from './pages/StudentsAtRisk'
 import { Users } from './pages/Users'
 import { Students } from './pages/Students'
 import { Holidays } from './pages/Holidays'
+import { Backup } from './pages/Backup'
 import { TeacherDashboard } from './pages/TeacherDashboard'
 import { Login } from './pages/Login'
 import { ChangePassword } from './pages/ChangePassword'
@@ -51,7 +52,8 @@ const router = createHashRouter([
             children: [
               { path: 'usuarios', element: <Users /> },
               { path: 'alumnos', element: <Students /> },
-              { path: 'feriados', element: <Holidays /> }
+              { path: 'feriados', element: <Holidays /> },
+              { path: 'backup', element: <Backup /> }
             ]
           }
         ]

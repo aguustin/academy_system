@@ -119,7 +119,9 @@ const api: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.CERTIFICATION_GET_STUDENT_CERTIFICATION, {
         courseEditionId,
         studentId
-      })
+      }),
+    getCourseEditionSummary: (courseEditionId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CERTIFICATION_GET_COURSE_EDITION_SUMMARY, courseEditionId)
   },
   courseProgram: {
     upload: (courseTemplateId) =>
@@ -134,6 +136,9 @@ const api: ElectronApi = {
   },
   search: {
     global: (query) => ipcRenderer.invoke(IPC_CHANNELS.SEARCH_GLOBAL, query)
+  },
+  backup: {
+    create: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_CREATE)
   }
 }
 

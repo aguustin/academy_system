@@ -5,6 +5,7 @@ import type { Enrollment } from './enrollments'
 import type {
   Attendance,
   AttendanceSummary,
+  AttendanceSummaryClassEntry,
   ClassAttendanceEntry,
   ClassAttendanceStudent,
   FindStudentTodayClassesResult,
@@ -19,10 +20,12 @@ import type {
   GenerateClassSessionsResult
 } from './class-sessions'
 import type {
+  AcademicStatus,
   Evaluation,
   EvaluationResultEntry,
   EvaluationResults,
-  EvaluationType
+  EvaluationType,
+  FinalEvaluationInfo
 } from './evaluations'
 import type { DashboardSummary } from './dashboard'
 import type { Holiday, HolidayInput } from './holidays'
@@ -103,11 +106,28 @@ export interface StudentCertification {
   attendanceCount: number
   attendancePercentage: number
   attendanceApproved: boolean
-  averageGrade: number
-  approvedWorkPercentage: number
-  workApproved: boolean
-  eligibleForCertificate: boolean
+  // Promedio de las evaluaciones de proceso con nota cargada (null = ninguna todavía).
+  processAverageGrade: number | null
+  // null = la edición no tiene evaluación final creada.
+  finalEvaluation: FinalEvaluationInfo | null
+  academicStatus: AcademicStatus
   evaluations: StudentCertificationEvaluation[]
+}
+
+// Extiende la tabla de "Ver total de asistencias" (Requerimiento 7) con nota final y situación
+// académica, reutilizando la grilla de asistencia por clase que ya arma AttendanceSummary.
+export interface CourseEditionAcademicSummaryStudent {
+  studentId: string
+  fullName: string
+  attendanceCount: number
+  attendancePercentage: number
+  attendance: AttendanceSummaryClassEntry[]
+  finalEvaluation: FinalEvaluationInfo | null
+  academicStatus: AcademicStatus
+}
+export interface CourseEditionAcademicSummary {
+  totalClasses: number
+  students: CourseEditionAcademicSummaryStudent[]
 }
 
 export interface ElectronApi {
@@ -214,6 +234,7 @@ export interface ElectronApi {
       courseEditionId: string,
       studentId: string
     ) => Promise<StudentCertification>
+    getCourseEditionSummary: (courseEditionId: string) => Promise<CourseEditionAcademicSummary>
   }
   courseProgram: {
     upload: (courseTemplateId: string) => Promise<CourseTemplate>
@@ -225,5 +246,9 @@ export interface ElectronApi {
   }
   search: {
     global: (query: string) => Promise<GlobalSearchResults>
+  }
+  backup: {
+    // null si el usuario canceló el diálogo de guardado.
+    create: () => Promise<string | null>
   }
 }

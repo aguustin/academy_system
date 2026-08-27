@@ -61,10 +61,29 @@ async function assertNameNotDuplicated(
   }
 }
 
+// La nota final (Requerimiento 2) se calcula asumiendo que hay a lo sumo una evaluación de tipo
+// 'final' por edición: si existe, es LA nota final; si no existe, no hay nota final. Sin este
+// límite esa suposición dejaría de ser válida.
+async function assertSingleFinalEvaluation(
+  courseEditionId: string,
+  type: string,
+  excludeId?: string
+): Promise<void> {
+  if (type !== 'final') return
+  const existing = await listEvaluationsByEdition(courseEditionId)
+  const alreadyExists = existing.some(
+    (evaluation) => evaluation.id !== excludeId && evaluation.type === 'final'
+  )
+  if (alreadyExists) {
+    throw new Error('Ya existe una evaluación final para esta edición')
+  }
+}
+
 export async function createEvaluation(data: EvaluationCreateInput): Promise<Evaluation> {
   const courseEdition = await resolveOwnedCourseEdition(data.courseEditionId)
   const name = validateName(data.name)
   await assertNameNotDuplicated(courseEdition.id, name)
+  await assertSingleFinalEvaluation(courseEdition.id, data.type)
 
   return createEvaluationInDb({ courseEditionId: courseEdition.id, type: data.type, name })
 }
@@ -81,6 +100,7 @@ export async function updateEvaluation(
   await resolveOwnedCourseEdition(evaluation.courseEditionId)
   const name = validateName(data.name)
   await assertNameNotDuplicated(evaluation.courseEditionId, name, evaluation.id)
+  await assertSingleFinalEvaluation(evaluation.courseEditionId, data.type, evaluation.id)
 
   return updateEvaluationInDb(id, { type: data.type, name })
 }

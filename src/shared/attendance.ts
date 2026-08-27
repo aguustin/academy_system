@@ -85,6 +85,10 @@ export interface AttendanceSummaryStudent {
   attendancePercentage: number
   meetsAttendanceRequirement: boolean
   attendance: AttendanceSummaryClassEntry[]
+  // Se exponen para que certification-service pueda derivar la situación académica (asistencia
+  // ya irrecuperable) sin volver a calcular las estadísticas de asistencia desde cero.
+  usedAbsences: number
+  allowedAbsences: number
 }
 
 export interface AttendanceSummary {

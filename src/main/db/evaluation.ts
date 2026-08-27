@@ -111,6 +111,16 @@ export async function listStudentEvaluations(evaluationId: string): Promise<Stud
   return docs.map(toStudentEvaluation)
 }
 
+// Trae las notas de varias evaluaciones a la vez (todos los alumnos): lo usa certification-service
+// para calcular la situación académica de toda una edición sin una consulta por evaluación.
+export async function listStudentEvaluationsByEvaluationIds(
+  evaluationIds: string[]
+): Promise<StudentEvaluation[]> {
+  if (evaluationIds.length === 0) return []
+  const docs = await StudentEvaluationModel.find({ evaluationId: { $in: evaluationIds } })
+  return docs.map(toStudentEvaluation)
+}
+
 export interface SaveStudentEvaluationInput {
   evaluationId: string
   studentId: string

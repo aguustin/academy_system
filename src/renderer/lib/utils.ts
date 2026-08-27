@@ -43,3 +43,9 @@ export function parseDateInput(value: string): Date {
   const [year, month, day] = value.split('-').map(Number)
   return new Date(year, month - 1, day)
 }
+
+// Los profesores pueden escribir notas con coma o punto como separador decimal (7,5 o 7.5);
+// se normaliza a punto antes de convertir a number, el único formato que entiende Number().
+export function parseGradeInput(value: string): number {
+  return Number(value.replace(',', '.'))
+}

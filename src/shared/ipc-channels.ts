@@ -63,9 +63,11 @@ export const IPC_CHANNELS = {
   EVALUATION_OPEN_PDF: 'evaluation:openPdf',
   EVALUATION_REMOVE_PDF: 'evaluation:removePdf',
   CERTIFICATION_GET_STUDENT_CERTIFICATION: 'certification:getStudentCertification',
+  CERTIFICATION_GET_COURSE_EDITION_SUMMARY: 'certification:getCourseEditionSummary',
   COURSE_PROGRAM_UPLOAD: 'courseProgram:upload',
   COURSE_PROGRAM_OPEN: 'courseProgram:open',
   COURSE_PROGRAM_REMOVE: 'courseProgram:remove',
   DASHBOARD_GET_SUMMARY: 'dashboard:getSummary',
-  SEARCH_GLOBAL: 'search:global'
+  SEARCH_GLOBAL: 'search:global',
+  BACKUP_CREATE: 'backup:create'
 } as const
