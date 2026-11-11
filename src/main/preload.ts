@@ -57,7 +57,9 @@ const api: ElectronApi = {
     create: (data) => ipcRenderer.invoke(IPC_CHANNELS.ENROLLMENT_CREATE, data),
     listByCourseEdition: (courseEditionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.ENROLLMENT_LIST_BY_COURSE_EDITION, courseEditionId),
-    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.ENROLLMENT_DELETE, id)
+    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.ENROLLMENT_DELETE, id),
+    updateStatus: (id, status) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ENROLLMENT_UPDATE_STATUS, { id, status })
   },
   attendance: {
     findTodayClasses: (dni) => ipcRenderer.invoke(IPC_CHANNELS.ATTENDANCE_FIND_TODAY_CLASSES, dni),
@@ -139,6 +141,17 @@ const api: ElectronApi = {
   },
   backup: {
     create: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_CREATE)
+  },
+  notice: {
+    create: (data) => ipcRenderer.invoke(IPC_CHANNELS.NOTICE_CREATE, data),
+    list: () => ipcRenderer.invoke(IPC_CHANNELS.NOTICE_LIST),
+    listRecipients: (noticeId) => ipcRenderer.invoke(IPC_CHANNELS.NOTICE_LIST_RECIPIENTS, noticeId),
+    pickImage: () => ipcRenderer.invoke(IPC_CHANNELS.NOTICE_PICK_IMAGE),
+    discardImage: (imagePath) => ipcRenderer.invoke(IPC_CHANNELS.NOTICE_DISCARD_IMAGE, imagePath),
+    getImagePreview: (imagePath) =>
+      ipcRenderer.invoke(IPC_CHANNELS.NOTICE_GET_IMAGE_PREVIEW, imagePath),
+    previewRecipients: (mode, date) =>
+      ipcRenderer.invoke(IPC_CHANNELS.NOTICE_PREVIEW_RECIPIENTS, { mode, date })
   }
 }
 

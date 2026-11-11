@@ -1,7 +1,7 @@
 import type { Teacher } from './teachers'
 import type { CourseTemplate, CourseEdition, CourseEditionInput } from './courses'
 import type { Student } from './students'
-import type { Enrollment } from './enrollments'
+import type { Enrollment, EnrollmentStatus } from './enrollments'
 import type {
   Attendance,
   AttendanceSummary,
@@ -30,13 +30,22 @@ import type {
 import type { DashboardSummary } from './dashboard'
 import type { Holiday, HolidayInput } from './holidays'
 import type { GlobalSearchResults } from './search'
+import type {
+  CreateNoticeResult,
+  Notice,
+  NoticeInput,
+  NoticeMode,
+  NoticeRecipientDetail,
+  PickedNoticeImage
+} from './notices'
 
 export type TeacherInput = Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>
 export type CourseTemplateInput = Omit<
   CourseTemplate,
   'id' | 'createdAt' | 'updatedAt' | 'programFile'
 >
-export type EnrollmentInput = Omit<Enrollment, 'id' | 'createdAt'>
+// El estado nunca se manda al crear: siempre arranca "in-progress" (default del schema server-side).
+export type EnrollmentInput = Omit<Enrollment, 'id' | 'status' | 'createdAt'>
 export type StudentInput = Omit<Student, 'id'>
 export interface ImportStudentsResult {
   imported: number
@@ -122,6 +131,7 @@ export interface CourseEditionAcademicSummaryStudent {
   attendanceCount: number
   attendancePercentage: number
   attendance: AttendanceSummaryClassEntry[]
+  processAverageGrade: number | null
   finalEvaluation: FinalEvaluationInfo | null
   academicStatus: AcademicStatus
 }
@@ -182,6 +192,7 @@ export interface ElectronApi {
     create: (data: EnrollmentInput) => Promise<Enrollment>
     listByCourseEdition: (courseEditionId: string) => Promise<Enrollment[]>
     delete: (id: string) => Promise<void>
+    updateStatus: (id: string, status: EnrollmentStatus) => Promise<Enrollment | null>
   }
   attendance: {
     findTodayClasses: (dni: string) => Promise<FindStudentTodayClassesResult>
@@ -250,5 +261,15 @@ export interface ElectronApi {
   backup: {
     // null si el usuario canceló el diálogo de guardado.
     create: () => Promise<string | null>
+  }
+  notice: {
+    create: (data: NoticeInput) => Promise<CreateNoticeResult>
+    list: () => Promise<Notice[]>
+    listRecipients: (noticeId: string) => Promise<NoticeRecipientDetail[]>
+    // null si el usuario canceló el selector de imagen (la imagen es opcional).
+    pickImage: () => Promise<PickedNoticeImage | null>
+    discardImage: (imagePath: string) => Promise<void>
+    getImagePreview: (imagePath: string) => Promise<string>
+    previewRecipients: (mode: NoticeMode, date: Date) => Promise<NoticeRecipientDetail[]>
   }
 }

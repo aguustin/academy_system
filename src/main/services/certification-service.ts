@@ -11,11 +11,13 @@ import type {
   StudentCertificationEvaluation
 } from '../../shared/electron-api'
 import type { AcademicStatus } from '../../shared/evaluations'
+import { isWithdrawnFromCourse } from '../../shared/enrollments'
 import { getCourseDetail } from './teacher-course-service'
 import { computeAttendanceStats, getAttendanceSummary } from './attendance-service'
 import { listEvaluations } from './evaluation-service'
 import { findAttendanceByCourseEdition } from '../db/attendance'
 import { findCourseEditionById } from '../db/course-edition'
+import { listEnrollmentsByCourseEdition } from '../db/enrollment'
 import { listStudentEvaluationsByEvaluationIds } from '../db/evaluation'
 
 function round(value: number, decimals: number): number {
@@ -208,42 +210,49 @@ export async function getStudentCertification(
 export async function getCourseEditionAcademicSummary(
   courseEditionId: string
 ): Promise<CourseEditionAcademicSummary> {
-  const [attendanceSummary, evaluationData, courseEdition] = await Promise.all([
+  const [attendanceSummary, evaluationData, courseEdition, enrollments] = await Promise.all([
     getAttendanceSummary(courseEditionId),
     loadEditionEvaluationData(courseEditionId),
-    findCourseEditionById(courseEditionId)
+    findCourseEditionById(courseEditionId),
+    listEnrollmentsByCourseEdition(courseEditionId)
   ])
   if (!courseEdition) {
     throw new Error('Edición no encontrada')
   }
 
-  const students: CourseEditionAcademicSummaryStudent[] = attendanceSummary.students.map(
-    (student) => {
-      const { processGrades, finalEvaluationGrade, finalEvaluation } = extractStudentGrades(
-        evaluationData,
-        student.studentId
-      )
-
-      const { academicStatus } = computeAcademicSummary({
-        attendancePercentage: student.attendancePercentage,
-        attendanceIrrecoverable: student.usedAbsences > student.allowedAbsences,
-        minimumAttendancePercentage: courseEdition.minimumAttendancePercentage,
-        courseEditionFinished: courseEdition.status === 'finished',
-        processGrades,
-        finalEvaluationGrade
-      })
-
-      return {
-        studentId: student.studentId,
-        fullName: student.fullName,
-        attendanceCount: student.attendanceCount,
-        attendancePercentage: student.attendancePercentage,
-        attendance: student.attendance,
-        finalEvaluation,
-        academicStatus
-      }
-    }
+  // Abandono/No asistió se ocultan de esta lista (Finalizó sigue mostrándose: su asistencia ya
+  // dictada sigue siendo un dato válido una vez terminada la edición).
+  const statusByStudentId = new Map(enrollments.map((e) => [e.studentId, e.status]))
+  const visibleStudents = attendanceSummary.students.filter(
+    (student) => !isWithdrawnFromCourse(statusByStudentId.get(student.studentId) ?? 'in-progress')
   )
+
+  const students: CourseEditionAcademicSummaryStudent[] = visibleStudents.map((student) => {
+    const { processGrades, finalEvaluationGrade, finalEvaluation } = extractStudentGrades(
+      evaluationData,
+      student.studentId
+    )
+
+    const { processAverageGrade, academicStatus } = computeAcademicSummary({
+      attendancePercentage: student.attendancePercentage,
+      attendanceIrrecoverable: student.usedAbsences > student.allowedAbsences,
+      minimumAttendancePercentage: courseEdition.minimumAttendancePercentage,
+      courseEditionFinished: courseEdition.status === 'finished',
+      processGrades,
+      finalEvaluationGrade
+    })
+
+    return {
+      studentId: student.studentId,
+      fullName: student.fullName,
+      attendanceCount: student.attendanceCount,
+      attendancePercentage: student.attendancePercentage,
+      attendance: student.attendance,
+      processAverageGrade,
+      finalEvaluation,
+      academicStatus
+    }
+  })
 
   return { totalClasses: attendanceSummary.totalClasses, students }
 }

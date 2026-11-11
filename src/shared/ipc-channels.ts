@@ -35,6 +35,7 @@ export const IPC_CHANNELS = {
   ENROLLMENT_CREATE: 'enrollment:create',
   ENROLLMENT_LIST_BY_COURSE_EDITION: 'enrollment:listByCourseEdition',
   ENROLLMENT_DELETE: 'enrollment:delete',
+  ENROLLMENT_UPDATE_STATUS: 'enrollment:updateStatus',
   ATTENDANCE_FIND_TODAY_CLASSES: 'attendance:findTodayClasses',
   ATTENDANCE_REGISTER_CLASS: 'attendance:registerClass',
   ATTENDANCE_FIND_BY_COURSE_EDITION: 'attendance:findByCourseEdition',
@@ -69,5 +70,12 @@ export const IPC_CHANNELS = {
   COURSE_PROGRAM_REMOVE: 'courseProgram:remove',
   DASHBOARD_GET_SUMMARY: 'dashboard:getSummary',
   SEARCH_GLOBAL: 'search:global',
-  BACKUP_CREATE: 'backup:create'
+  BACKUP_CREATE: 'backup:create',
+  NOTICE_CREATE: 'notice:create',
+  NOTICE_LIST: 'notice:list',
+  NOTICE_LIST_RECIPIENTS: 'notice:listRecipients',
+  NOTICE_PICK_IMAGE: 'notice:pickImage',
+  NOTICE_DISCARD_IMAGE: 'notice:discardImage',
+  NOTICE_GET_IMAGE_PREVIEW: 'notice:getImagePreview',
+  NOTICE_PREVIEW_RECIPIENTS: 'notice:previewRecipients'
 } as const

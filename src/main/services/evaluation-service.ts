@@ -7,6 +7,7 @@ import {
 } from '../../shared/evaluations'
 import type { EvaluationCreateInput, EvaluationUpdateInput } from '../../shared/electron-api'
 import type { CourseEdition } from '../../shared/courses'
+import { canReceiveNewRecords, type Enrollment } from '../../shared/enrollments'
 import { getSession } from '../auth/session'
 import { findCourseEditionById } from '../db/course-edition'
 import { listEnrollmentsByCourseEdition } from '../db/enrollment'
@@ -23,6 +24,12 @@ import {
 import { openStoredFile, pickAndStoreFile, removeStoredFile } from './file-storage'
 
 const EVALUATION_PDF_FOLDER = 'evaluation-pdfs'
+
+// Un alumno en Abandono, No asistió o Finalizó no puede recibir notas nuevas: no debe aparecer
+// en el roster que ve el tallerista ni aceptarse una nota para él server-side.
+function isGradableEnrollment(enrollment: Enrollment): boolean {
+  return canReceiveNewRecords(enrollment.status)
+}
 
 async function resolveOwnedCourseEdition(courseEditionId: string): Promise<CourseEdition> {
   const courseEdition = await findCourseEditionById(courseEditionId)
@@ -144,6 +151,7 @@ export async function getEvaluationResults(evaluationId: string): Promise<Evalua
 
   const students: EvaluationResultStudent[] = []
   for (const enrollment of enrollments) {
+    if (!isGradableEnrollment(enrollment)) continue
     const student = await mongoStudentProvider.findById(enrollment.studentId)
     if (!student) continue
     const result = resultByStudent.get(student.id)
@@ -167,9 +175,11 @@ export async function saveEvaluationResults(
   const { courseEdition } = await resolveOwnedEvaluation(evaluationId)
 
   const enrollments = await listEnrollmentsByCourseEdition(courseEdition.id)
-  const enrolledStudentIds = new Set(enrollments.map((enrollment) => enrollment.studentId))
+  const gradableStudentIds = new Set(
+    enrollments.filter(isGradableEnrollment).map((enrollment) => enrollment.studentId)
+  )
   for (const result of results) {
-    if (!enrolledStudentIds.has(result.studentId)) {
+    if (!gradableStudentIds.has(result.studentId)) {
       throw new Error('El alumno no está inscripto en esta edición')
     }
   }

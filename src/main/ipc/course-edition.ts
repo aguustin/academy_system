@@ -5,9 +5,9 @@ import {
   createCourseEdition,
   deleteCourseEdition,
   findCourseEditionById,
-  getCourseEditions,
-  updateCourseEdition
+  getCourseEditions
 } from '../db/course-edition'
+import { updateCourseEdition } from '../services/course-edition-service'
 import { exportCourseEditionsAttendance } from '../services/course-edition-export-service'
 import { handleAuthenticated } from '../auth/require-session'
 

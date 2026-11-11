@@ -15,6 +15,7 @@ import {
 } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { CourseEdition } from '../../shared/courses'
+import { canReceiveNewRecords } from '../../shared/enrollments'
 import { mongoStudentProvider } from '../providers/mongo-student-provider'
 import { findCourseEditionById, getCourseEditions } from '../db/course-edition'
 import { findCourseTemplateById } from '../db/course-template'
@@ -197,8 +198,11 @@ export async function registerClassAttendance(
   }
 
   // Nunca confiar en los IDs que llegan desde el kiosco: se revalida la inscripción en el backend.
+  // Abandono/No asistió/Finalizó no pueden autorregistrar asistencia nueva.
   const enrollments = await listEnrollmentsByCourseEdition(classSession.courseEditionId)
-  const isEnrolled = enrollments.some((enrollment) => enrollment.studentId === studentId)
+  const isEnrolled = enrollments.some(
+    (enrollment) => enrollment.studentId === studentId && canReceiveNewRecords(enrollment.status)
+  )
   if (!isEnrolled) {
     throw new Error('El alumno no está inscripto en esta edición')
   }
@@ -262,6 +266,7 @@ export async function listAttendanceByClass(
 
   const roster: ClassAttendanceStudent[] = []
   for (const enrollment of enrollments) {
+    if (!canReceiveNewRecords(enrollment.status)) continue
     const student = await mongoStudentProvider.findById(enrollment.studentId)
     if (!student) continue
     roster.push({
@@ -288,9 +293,13 @@ export async function saveClassAttendance(
   const { classSession, courseEdition } = await resolveOwnedClassSession(classSessionId)
 
   const enrollments = await listEnrollmentsByCourseEdition(courseEdition.id)
-  const enrolledStudentIds = new Set(enrollments.map((enrollment) => enrollment.studentId))
+  const gradableStudentIds = new Set(
+    enrollments
+      .filter((enrollment) => canReceiveNewRecords(enrollment.status))
+      .map((enrollment) => enrollment.studentId)
+  )
   for (const entry of entries) {
-    if (!enrolledStudentIds.has(entry.studentId)) {
+    if (!gradableStudentIds.has(entry.studentId)) {
       throw new Error('El alumno no está inscripto en esta edición')
     }
   }

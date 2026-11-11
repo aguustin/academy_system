@@ -1,10 +1,18 @@
 import { existsSync } from 'node:fs'
-import { copyFile, mkdir, unlink } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import { app, BrowserWindow, dialog, shell } from 'electron'
 
 function getStorageDir(folder: string): string {
   return path.join(app.getPath('userData'), folder)
+}
+
+const IMAGE_MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp'
 }
 
 // Abre el selector nativo de archivos y copia el elegido a userData/<folder>.
@@ -48,4 +56,14 @@ export async function openStoredFile(folder: string, fileName: string): Promise<
   if (errorMessage) {
     throw new Error(errorMessage)
   }
+}
+
+// El renderer no tiene acceso al sistema de archivos: para previsualizar una imagen (recién
+// elegida o de un aviso ya creado) hay que mandarle el contenido como data URL por IPC.
+export async function readStoredFileAsDataUrl(folder: string, fileName: string): Promise<string> {
+  const filePath = path.join(getStorageDir(folder), fileName)
+  const buffer = await readFile(filePath)
+  const mimeType =
+    IMAGE_MIME_TYPES[path.extname(fileName).toLowerCase()] ?? 'application/octet-stream'
+  return `data:${mimeType};base64,${buffer.toString('base64')}`
 }

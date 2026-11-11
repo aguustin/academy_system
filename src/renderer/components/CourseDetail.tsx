@@ -6,9 +6,13 @@ import type { ClassAttendanceStudent } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { DayOfWeek } from '../../shared/courses'
 import {
+  enrollmentStatusSchema,
+  type Enrollment,
+  type EnrollmentStatus
+} from '../../shared/enrollments'
+import {
   evaluationGradeSchema,
   evaluationSchema,
-  evaluationStatusFromGrade,
   evaluationTypeSchema,
   formatFinalGradeDisplay,
   type AcademicStatus,
@@ -66,6 +70,27 @@ const ACADEMIC_STATUS_VARIANT: Record<AcademicStatus, 'success' | 'destructive' 
   'in-progress': 'secondary'
 }
 
+// "Cursando" (no "En cursado") a propósito: evita que se confunda con el ESTADO académico de
+// "Ver total de asistencias" (EN CURSADO/APROBADO/DESAPROBADO), que es un concepto distinto.
+const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
+  'in-progress': 'Cursando',
+  dropped: 'Abandono',
+  absent: 'No asistió',
+  finished: 'Finalizó'
+}
+
+const ENROLLMENT_STATUS_VARIANT: Record<EnrollmentStatus, 'secondary' | 'destructive' | 'outline'> =
+  {
+    'in-progress': 'secondary',
+    dropped: 'destructive',
+    absent: 'destructive',
+    finished: 'outline'
+  }
+
+function isInactiveEnrollmentStatus(status: EnrollmentStatus | undefined): boolean {
+  return status === 'dropped' || status === 'absent'
+}
+
 const RESULT_STATUS_LABELS: Record<EvaluationResultStatus, string> = {
   'not-evaluated': 'Sin evaluar',
   passed: 'Aprobado',
@@ -81,9 +106,12 @@ const RESULT_STATUS_VARIANT: Record<
   failed: 'destructive'
 }
 
-function gradeFieldError(grade: number | null): string | null {
-  if (grade === null) return null
-  return evaluationGradeSchema.safeParse(grade).success
+// Recibe el texto crudo (no la nota ya parseada): validar sobre el string evita que un valor
+// parcial mientras se escribe (ej. "7," a mitad de tipear "7,5") se descarte antes de tiempo.
+function gradeFieldError(rawValue: string): string | null {
+  if (rawValue.trim() === '') return null
+  const parsed = parseGradeInput(rawValue)
+  return evaluationGradeSchema.safeParse(parsed).success
     ? null
     : 'La nota debe ser un número entre 0 y 10'
 }
@@ -299,7 +327,10 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   const confirm = useConfirm()
   const alertDialog = useAlertDialog()
   const canManageAttendance = user?.role === 'admin'
+  const canManageEnrollmentStatus = user?.role === 'admin'
   const [detail, setDetail] = useState<TeacherCourseDetail | null>(null)
+  const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null)
+  const [showInactiveStudents, setShowInactiveStudents] = useState(false)
   const [attendanceMode, setAttendanceMode] = useState<AttendanceMode>({ type: 'closed' })
   const [roster, setRoster] = useState<ClassAttendanceStudent[] | null>(null)
   const [saving, setSaving] = useState(false)
@@ -308,6 +339,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>({ type: 'closed' })
   const [evaluations, setEvaluations] = useState<Evaluation[] | null>(null)
   const [results, setResults] = useState<EvaluationResultStudent[] | null>(null)
+  // Texto crudo por alumno (no la nota ya convertida a number): el input queda atado a esto, no
+  // a results[].grade, para que escribir "7,5" carácter por carácter no se corte a mitad de tipeo.
+  const [gradeInputs, setGradeInputs] = useState<Record<string, string>>({})
   const [savingResults, setSavingResults] = useState(false)
   const [resultsSavedMessage, setResultsSavedMessage] = useState<string | null>(null)
   const [resultsError, setResultsError] = useState<string | null>(null)
@@ -320,6 +354,20 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
   useEffect(() => {
     window.api.teacherCourse.getDetail(courseEditionId).then(setDetail)
   }, [courseEditionId])
+
+  function loadEnrollments(): void {
+    window.api.enrollment.listByCourseEdition(courseEditionId).then(setEnrollments)
+  }
+
+  useEffect(loadEnrollments, [courseEditionId])
+
+  async function handleEnrollmentStatusChange(
+    enrollment: Enrollment,
+    status: EnrollmentStatus
+  ): Promise<void> {
+    await window.api.enrollment.updateStatus(enrollment.id, status)
+    loadEnrollments()
+  }
 
   async function openClass(classSession: ClassSession): Promise<void> {
     setSavedMessage(null)
@@ -417,24 +465,24 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
     setEvaluationMode({ type: 'results', evaluation })
     const data = await window.api.evaluation.getResults(evaluation.id)
     setResults(data.students)
+    setGradeInputs(
+      Object.fromEntries(
+        data.students.map((student) => [student.studentId, student.grade?.toString() ?? ''])
+      )
+    )
   }
 
   function setResultGrade(studentId: string, rawValue: string): void {
     setResultsSavedMessage(null)
-    setResults(
-      (current) =>
-        current?.map((student) => {
-          if (student.studentId !== studentId) return student
-          const grade = rawValue === '' ? null : parseGradeInput(rawValue)
-          return { ...student, grade, status: evaluationStatusFromGrade(grade) }
-        }) ?? null
-    )
+    setGradeInputs((current) => ({ ...current, [studentId]: rawValue }))
   }
 
   async function handleSaveResults(): Promise<void> {
     if (evaluationMode.type !== 'results' || !results) return
 
-    const hasInvalidGrade = results.some((student) => gradeFieldError(student.grade) !== null)
+    const hasInvalidGrade = results.some(
+      (student) => gradeFieldError(gradeInputs[student.studentId] ?? '') !== null
+    )
     if (hasInvalidGrade) {
       setResultsError('Corregí las notas inválidas antes de guardar.')
       return
@@ -444,21 +492,38 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
     setSavingResults(true)
     try {
       const entries = results
-        .filter((student) => student.grade !== null)
-        .map((student) => ({ studentId: student.studentId, grade: student.grade as number }))
+        .filter((student) => (gradeInputs[student.studentId] ?? '').trim() !== '')
+        .map((student) => ({
+          studentId: student.studentId,
+          grade: parseGradeInput(gradeInputs[student.studentId] ?? '')
+        }))
       const data = await window.api.evaluation.saveResults(evaluationMode.evaluation.id, entries)
       setResults(data.students)
+      setGradeInputs(
+        Object.fromEntries(
+          data.students.map((student) => [student.studentId, student.grade?.toString() ?? ''])
+        )
+      )
       setResultsSavedMessage('Resultados guardados correctamente.')
     } finally {
       setSavingResults(false)
     }
   }
 
+  const enrollmentByStudentId = new Map((enrollments ?? []).map((e) => [e.studentId, e]))
   const sortedStudents = sortByName(detail?.students ?? [])
-  const filteredStudents = sortedStudents.filter((student) =>
+  const visibleStudents = showInactiveStudents
+    ? sortedStudents
+    : sortedStudents.filter(
+        (student) => !isInactiveEnrollmentStatus(enrollmentByStudentId.get(student.id)?.status)
+      )
+  const filteredStudents = visibleStudents.filter((student) =>
     normalizeText(student.lastName).includes(normalizeText(studentSearch.trim()))
   )
   const studentsPagination = usePagination(filteredStudents)
+  const hasInactiveStudents = sortedStudents.some((student) =>
+    isInactiveEnrollmentStatus(enrollmentByStudentId.get(student.id)?.status)
+  )
 
   if (detail === null) {
     return <p className="text-sm text-muted-foreground">Cargando...</p>
@@ -509,38 +574,80 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
           <EmptyState icon={Users} title="No hay alumnos inscriptos todavía" />
         ) : (
           <>
-            <Input
-              placeholder="Buscar por apellido..."
-              value={studentSearch}
-              onChange={(event) => setStudentSearch(event.target.value)}
-              className="max-w-sm"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="Buscar por apellido..."
+                value={studentSearch}
+                onChange={(event) => setStudentSearch(event.target.value)}
+                className="max-w-sm"
+              />
+              {hasInactiveStudents && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowInactiveStudents((prev) => !prev)}
+                >
+                  {showInactiveStudents ? 'Ocultar dados de baja' : 'Mostrar dados de baja'}
+                </Button>
+              )}
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Alumno</TableHead>
                   <TableHead>DNI</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {studentsPagination.pageItems.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">
-                      {student.lastName} {student.firstName}
-                    </TableCell>
-                    <TableCell>{student.dni}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedStudentId(student.id)}
-                      >
-                        Ver detalle
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {studentsPagination.pageItems.map((student) => {
+                  const enrollment = enrollmentByStudentId.get(student.id)
+                  const status = enrollment?.status ?? 'in-progress'
+                  return (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">
+                        {student.lastName} {student.firstName}
+                      </TableCell>
+                      <TableCell>{student.dni}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant={ENROLLMENT_STATUS_VARIANT[status]}>
+                            {ENROLLMENT_STATUS_LABELS[status]}
+                          </Badge>
+                          {canManageEnrollmentStatus && enrollment && (
+                            <div className="flex flex-wrap gap-1">
+                              {enrollmentStatusSchema.options
+                                .filter((value) => value !== status)
+                                .map((value) => (
+                                  <Button
+                                    key={value}
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs"
+                                    onClick={() => handleEnrollmentStatusChange(enrollment, value)}
+                                  >
+                                    {ENROLLMENT_STATUS_LABELS[value]}
+                                  </Button>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedStudentId(student.id)}
+                        >
+                          Ver detalle
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
             <Pagination
@@ -673,6 +780,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                     ))}
                     <TableHead className="text-center">Total</TableHead>
                     <TableHead className="text-center">%</TableHead>
+                    <TableHead className="text-center">Promedio de proceso</TableHead>
                     <TableHead className="text-center">Nota final</TableHead>
                     <TableHead className="text-center">Estado</TableHead>
                   </TableRow>
@@ -689,6 +797,9 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                       <TableCell className="text-center">{student.attendanceCount}</TableCell>
                       <TableCell className="text-center">{student.attendancePercentage}%</TableCell>
                       <TableCell className="text-center">
+                        {student.processAverageGrade ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-center">
                         {formatFinalGradeDisplay(student.finalEvaluation)}
                       </TableCell>
                       <TableCell className="text-center">
@@ -698,6 +809,18 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                       </TableCell>
                     </TableRow>
                   ))}
+                  <TableRow className="bg-muted/30 font-semibold">
+                    <TableCell>Total presentes</TableCell>
+                    {summary.students[0].attendance.map((_, index) => (
+                      <TableCell key={index} className="text-center">
+                        {
+                          summary.students.filter((student) => student.attendance[index]?.present)
+                            .length
+                        }
+                      </TableCell>
+                    ))}
+                    <TableCell colSpan={5} />
+                  </TableRow>
                 </TableBody>
               </Table>
             )}
@@ -848,7 +971,8 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                 </TableHeader>
                 <TableBody>
                   {sortByName(results).map((student) => {
-                    const error = gradeFieldError(student.grade)
+                    const rawValue = gradeInputs[student.studentId] ?? ''
+                    const error = gradeFieldError(rawValue)
                     return (
                       <TableRow key={student.studentId}>
                         <TableCell className="font-medium">
@@ -859,7 +983,7 @@ export function CourseDetail({ courseEditionId, onBack }: CourseDetailProps): Re
                             type="text"
                             inputMode="decimal"
                             placeholder="0-10"
-                            value={student.grade ?? ''}
+                            value={rawValue}
                             onChange={(event) =>
                               setResultGrade(student.studentId, event.target.value)
                             }

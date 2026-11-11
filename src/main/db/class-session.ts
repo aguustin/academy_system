@@ -46,6 +46,15 @@ export async function findClassSessionById(id: string): Promise<ClassSession | n
   return doc ? toClassSession(doc) : null
 }
 
+// Para resolver destinatarios de un aviso "por fecha": todas las clases (de cualquier edición)
+// que caigan exactamente en ese día calendario, sin importar el horario.
+export async function listClassSessionsByDate(date: Date): Promise<ClassSession[]> {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000)
+  const docs = await ClassSessionModel.find({ date: { $gte: start, $lt: end } })
+  return docs.map(toClassSession)
+}
+
 export async function deleteClassSession(id: string): Promise<void> {
   await ClassSessionModel.findByIdAndDelete(id)
 }

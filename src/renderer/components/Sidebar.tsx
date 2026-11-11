@@ -9,6 +9,7 @@ import {
   DatabaseBackup,
   GraduationCap,
   LayoutDashboard,
+  Megaphone,
   PanelLeftClose,
   PanelLeftOpen,
   UserCog,
@@ -35,7 +36,8 @@ export function Sidebar(): React.JSX.Element {
                 { label: 'Usuarios', icon: UserCog, to: '/usuarios' },
                 { label: 'Alumnos', icon: GraduationCap, to: '/alumnos' },
                 { label: 'Feriados', icon: CalendarOff, to: '/feriados' },
-                { label: 'Backup', icon: DatabaseBackup, to: '/backup' }
+                { label: 'Backup', icon: DatabaseBackup, to: '/backup' },
+                { label: 'Avisos', icon: Megaphone, to: '/avisos' }
               ]
             : [])
           // { label: 'Reportes', icon: BarChart3 }
