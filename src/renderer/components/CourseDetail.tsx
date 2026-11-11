@@ -6,6 +6,7 @@ import type { ClassAttendanceStudent } from '../../shared/attendance'
 import type { ClassSession } from '../../shared/class-sessions'
 import type { DayOfWeek } from '../../shared/courses'
 import {
+  ENROLLMENT_STATUS_LABELS,
   enrollmentStatusSchema,
   type Enrollment,
   type EnrollmentStatus
@@ -68,15 +69,6 @@ const ACADEMIC_STATUS_VARIANT: Record<AcademicStatus, 'success' | 'destructive' 
   approved: 'success',
   failed: 'destructive',
   'in-progress': 'secondary'
-}
-
-// "Cursando" (no "En cursado") a propósito: evita que se confunda con el ESTADO académico de
-// "Ver total de asistencias" (EN CURSADO/APROBADO/DESAPROBADO), que es un concepto distinto.
-const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
-  'in-progress': 'Cursando',
-  dropped: 'Abandono',
-  absent: 'No asistió',
-  finished: 'Finalizó'
 }
 
 const ENROLLMENT_STATUS_VARIANT: Record<EnrollmentStatus, 'secondary' | 'destructive' | 'outline'> =

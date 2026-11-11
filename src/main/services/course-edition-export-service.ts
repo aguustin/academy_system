@@ -1,6 +1,7 @@
 import { BrowserWindow, dialog } from 'electron'
 import ExcelJS from 'exceljs'
 import { formatFinalGradeDisplay } from '../../shared/evaluations'
+import { ENROLLMENT_STATUS_LABELS, type EnrollmentStatus } from '../../shared/enrollments'
 import { findCourseEditionById } from '../db/course-edition'
 import { findCourseTemplateById } from '../db/course-template'
 import { listEnrollmentsByCourseEdition } from '../db/enrollment'
@@ -13,6 +14,14 @@ import {
   extractStudentGrades,
   loadEditionEvaluationData
 } from './certification-service'
+
+// Resalta visualmente en el Excel a los alumnos que ya no están cursando activamente, igual que
+// el Badge de estado en "Alumnos inscriptos". "Cursando" queda sin color (es el caso normal).
+const ENROLLMENT_STATUS_FILL: Partial<Record<EnrollmentStatus, string>> = {
+  dropped: 'FFFFFF00', // amarillo
+  absent: 'FFFF0000', // rojo
+  finished: 'FF00B050' // verde
+}
 
 const SHEET_NAME_MAX_LENGTH = 31
 // Cuántos caracteres del final del nombre se preservan siempre al recortar: ahí suelen ir los
@@ -92,6 +101,7 @@ export async function exportCourseEditionsAttendance(
       { width: 14 },
       { width: 14 },
       { width: 14 },
+      { width: 14 },
       { width: 12 },
       { width: 16 },
       { width: 12 }
@@ -102,6 +112,7 @@ export async function exportCourseEditionsAttendance(
       'Apellido',
       'Nombre',
       'DNI',
+      'Estado',
       'Clases totales',
       'Asistencias',
       'Inasistencias',
@@ -109,6 +120,7 @@ export async function exportCourseEditionsAttendance(
       'Nota final'
     ])
     headerRow.font = { bold: true }
+    const ESTADO_COLUMN = 4
 
     const [enrollments, classSessions, attendanceRecords, evaluationData] = await Promise.all([
       listEnrollmentsByCourseEdition(courseEditionId),
@@ -116,6 +128,7 @@ export async function exportCourseEditionsAttendance(
       findAttendanceByCourseEdition(courseEditionId),
       loadEditionEvaluationData(courseEditionId)
     ])
+    const statusByStudentId = new Map(enrollments.map((e) => [e.studentId, e.status]))
 
     const students = (
       await Promise.all(
@@ -149,17 +162,27 @@ export async function exportCourseEditionsAttendance(
         processGrades,
         finalEvaluationGrade
       })
+      const status = statusByStudentId.get(student.id) ?? 'in-progress'
 
-      worksheet.addRow([
+      const row = worksheet.addRow([
         student.lastName,
         student.firstName,
         student.dni,
+        ENROLLMENT_STATUS_LABELS[status],
         stats.totalClasses,
         stats.attendanceCount,
         stats.usedAbsences,
         processAverageGrade ?? '—',
         formatFinalGradeDisplay(finalEvaluation)
       ])
+      const fillColor = ENROLLMENT_STATUS_FILL[status]
+      if (fillColor) {
+        row.getCell(ESTADO_COLUMN).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: fillColor }
+        }
+      }
     }
   }
 
